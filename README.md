@@ -75,6 +75,11 @@ runBlocking {
 Important details:
 
 - Tokens should be provided only through `ZingSdk.updateAuthToken()` or via refresh delegates.
+- Make sure your Android `Application` class extends `coach.zing.fitness.coach.SdkApplication`
+  (and is annotated with `@HiltAndroidApp`). The base class wires WorkManager, coroutine scopes,
+  and the logout delegate that cleans the SDK database.
+- The SDK provides Compose UI components (e.g. `WorkoutPlanCard`) and the `ZingSdkActivity`
+  navigation host. Both rely on Hilt, so keep the default `SdkApplication` setup intact.
 
 ## iOS status
 
