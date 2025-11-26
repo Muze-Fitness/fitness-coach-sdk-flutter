@@ -1,0 +1,81 @@
+group = "com.example.zing_sdk_initializer"
+version = "1.0-SNAPSHOT"
+
+buildscript {
+    ext.kotlin_version = "2.1.0"
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.9.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+        classpath("org.jetbrains.kotlin:compose-compiler-gradle-plugin:$kotlin_version")
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+apply plugin: "org.jetbrains.kotlin.plugin.compose"
+
+android {
+    namespace = "com.example.zing_sdk_initializer"
+
+    compileSdk = 36
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        main.java.srcDirs += "src/main/kotlin"
+        test.java.srcDirs += "src/test/kotlin"
+    }
+
+    defaultConfig {
+        minSdk = 24
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.15"
+    }
+
+    testOptions {
+        unitTests.all {
+            useJUnitPlatform()
+
+            testLogging {
+                events "passed", "skipped", "failed", "standardOut", "standardError"
+                outputs.upToDateWhen { false }
+                showStandardStreams = true
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation("coach.zing:fitness-sdk:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("androidx.compose.ui:ui:1.8.0")
+    implementation("androidx.compose.foundation:foundation-layout:1.8.0")
+
+    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.mockito:mockito-core:5.0.0")
+}
