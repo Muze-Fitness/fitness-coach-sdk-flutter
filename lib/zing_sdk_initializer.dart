@@ -8,7 +8,8 @@ enum ZingSdkScreen {
   aiAssistant('ai_assistant'),
   workoutPlanDetails('workout_plan_details'),
   fullSchedule('full_schedule'),
-  profileSettings('profile_settings');
+  profileSettings('profile_settings'),
+  healthConnectPermissions('health_connect_permissions');
 
   const ZingSdkScreen(this.routeId);
 

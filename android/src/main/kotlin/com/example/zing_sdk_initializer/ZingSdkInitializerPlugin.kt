@@ -31,6 +31,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
             const val WORKOUT_PLAN_DETAILS = "workout_plan_details"
             const val FULL_SCHEDULE = "full_schedule"
             const val PROFILE_SETTINGS = "profile_settings"
+            const val HEALTH_CONNECT_PERMISSIONS = "health_connect_permissions"
         }
     }
 
@@ -108,6 +109,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
             RouteKeys.WORKOUT_PLAN_DETAILS -> StartingRoute.WorkoutPlanDetails
             RouteKeys.FULL_SCHEDULE -> StartingRoute.FullSchedule
             RouteKeys.PROFILE_SETTINGS -> StartingRoute.ProfileSettings
+            RouteKeys.HEALTH_CONNECT_PERMISSIONS -> StartingRoute.HealthConnectPermissions
             else -> null
         }
 

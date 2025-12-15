@@ -144,6 +144,30 @@ Add the following provider override to your app `AndroidManifest.xml` (inside `<
 </provider>
 ```
 
+### 7. Health Connect Integration (Optional)
+
+To enable Health Connect synchronization, add the following permissions to your `AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+```
+
+To restart health sync after device reboot, register the boot receiver inside `<application>`:
+
+```xml
+<receiver
+    android:name="coach.zing.fitness.coach.broadcast.SdkHealthSyncBootReceiver"
+    android:exported="false">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+    </intent-filter>
+</receiver>
+```
 
 ## Flutter API
 
@@ -164,7 +188,7 @@ await ZingSdkInitializer.instance.openScreen(ZingSdkScreen.aiAssistant);
   state)
 - `openScreen()` launches one of the supported native screens
   inside the SDK (`customWorkout`, `aiAssistant`, `workoutPlanDetails`,
-  `fullSchedule`, `profileSettings`)
+  `fullSchedule`, `profileSettings`, `healthConnectPermissions`)
 
 ### UI Components
 
