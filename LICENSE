@@ -1,1 +1,19 @@
-TODO: Add your license here.
+Copyright (c) 2026 Zing Coach Ltd
+
+All rights reserved.
+
+This software is provided under a limited, non-exclusive, non-transferable,
+revocable license for the sole purpose of integrating with Zing Coach services,
+subject to a separate written agreement with Zing Coach Ltd.
+
+You may not:
+- modify, adapt, or create derivative works of this software
+- redistribute, sublicense, or resell this software
+- use this software outside of integration with Zing Coach services
+- reverse engineer, decompile, or extract proprietary logic or models
+
+This software is licensed, not sold.
+
+No rights or warranties are granted under this license except as expressly stated
+herein. Any warranties, service levels, support obligations, or liability terms
+are governed exclusively by a separate written agreement with Zing Coach Ltd.
