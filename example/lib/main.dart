@@ -13,36 +13,73 @@ Future<void> main() async {
     debugPrintStack(stackTrace: stackTrace);
   }
 
-  runApp(const MyApp());
+  runApp(const ExampleApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ExampleApp extends StatelessWidget {
+  const ExampleApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Hello Flutter',
+      title: 'Zing SDK Example',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        textTheme: Theme.of(
-          context,
-        ).textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+        useMaterial3: true,
       ),
-      home: const FlutterHelloScreen(),
+      home: const HomePage(),
     );
   }
 }
 
-class FlutterHelloScreen extends StatelessWidget {
-  const FlutterHelloScreen({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final _sdk = ZingSdkInitializer.instance;
+  String? _error;
+
+  Future<void> _openScreen(ZingSdkScreen screen) async {
+    setState(() => _error = null);
+    try {
+      await _sdk.openScreen(screen);
+    } on StateError catch (e) {
+      setState(() => _error = e.message);
+    } on PlatformException catch (e) {
+      setState(() => _error = '${e.code}: ${e.message}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.black,
-      body: WorkoutPlanCardHost(),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Zing SDK Example')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const SizedBox(height: 200, child: WorkoutPlanCardHost()),
+          if (_error != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+          const SizedBox(height: 24),
+          for (final screen in ZingSdkScreen.values) ...[
+            OutlinedButton(
+              onPressed: () => _openScreen(screen),
+              child: Text(screen.name),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ),
     );
   }
 }
