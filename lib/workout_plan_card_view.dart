@@ -21,19 +21,11 @@ class WorkoutPlanCardHost extends StatelessWidget {
     final isAndroid =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
-    return SizedBox.expand(
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0050AC), Color(0xFF9354B9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: isAndroid
-            ? const _AndroidWorkoutPlanCard()
-            : unsupportedPlaceholder ?? const _UnsupportedPlatformNotice(),
-      ),
+    return SizedBox(
+      height: isAndroid ? 744 : 360,
+      child: isAndroid
+          ? const _AndroidWorkoutPlanCard()
+          : unsupportedPlaceholder ?? const _UnsupportedPlatformNotice(),
     );
   }
 }
@@ -57,24 +49,30 @@ class _UnsupportedPlatformNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.phone_android,
-            color: Colors.white70,
-            size: 42,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'WorkoutPlanCardView is available on Android only',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-          ),
-        ],
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1C1E),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.phone_android,
+              color: Colors.white70,
+              size: 42,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'WorkoutPlanCardView is available on Android only',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }

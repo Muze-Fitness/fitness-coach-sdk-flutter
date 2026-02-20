@@ -39,15 +39,13 @@ internal class WorkoutPlanCardView(
             ZingTheme {
                 Box(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.TopCenter
                 ) {
                     var isWorkoutPlanSettingsVisible by remember {
                         mutableStateOf(false)
                     }
                     WorkoutPlanCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         onCustomWorkoutClicked = {
                             ZingSdkActivity.launch(
                                 context,
