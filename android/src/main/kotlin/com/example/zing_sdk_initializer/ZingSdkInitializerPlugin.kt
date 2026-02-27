@@ -7,6 +7,8 @@ import coach.zing.fitness.coach.StartingRoute
 import coach.zing.fitness.coach.ZingSdk
 import coach.zing.fitness.coach.ZingSdkActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -16,7 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
+class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
 
     companion object {
         private const val CHANNEL_NAME = "zing_sdk_initializer"
@@ -46,7 +48,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
     private lateinit var channel: MethodChannel
     private lateinit var authStateEventChannel: EventChannel
     private lateinit var authTokenCallbackChannel: MethodChannel
-    private lateinit var applicationContext: Context
+    private var activityContext: Context? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -59,7 +61,6 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
         authTokenCallbackChannel =
             MethodChannel(binding.binaryMessenger, AUTH_TOKEN_CALLBACK_CHANNEL_NAME)
 
-        applicationContext = binding.applicationContext
         binding
             .platformViewRegistry
             .registerViewFactory(
@@ -148,6 +149,22 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
         }
     }
 
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        activityContext = binding.activity
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        activityContext = null
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        activityContext = binding.activity
+    }
+
+    override fun onDetachedFromActivity() {
+        activityContext = null
+    }
+
     private fun handleOpenScreen(call: MethodCall, result: MethodChannel.Result) {
         val routeKey = call.argument<String>(ARG_ROUTE)
         if (routeKey.isNullOrBlank()) {
@@ -192,8 +209,14 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
             return
         }
 
+        val context = activityContext
+        if (context == null) {
+            result.error("no_activity", "No activity context available", null)
+            return
+        }
+
         runCatching {
-            ZingSdkActivity.launch(applicationContext, startingRoute)
+            ZingSdkActivity.launch(context, startingRoute)
             result.success(null)
         }.onFailure { throwable ->
             Log.e(TAG, "Failed to launch route $routeKey", throwable)
