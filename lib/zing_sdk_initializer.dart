@@ -1,55 +1,41 @@
+import 'sdk_auth_state.dart';
+import 'sdk_authentication.dart';
+import 'starting_route.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
 
+export 'sdk_auth_state.dart';
+export 'sdk_authentication.dart';
+export 'starting_route.dart';
 export 'workout_plan_card_view.dart';
 
-/// Destinations that can be launched directly inside the native Zing SDK.
-enum ZingSdkScreen {
-  customWorkout('custom_workout'),
-  aiAssistant('ai_assistant'),
-  workoutPlanDetails('workout_plan_details'),
-  fullSchedule('full_schedule'),
-  profileSettings('profile_settings');
-
-  const ZingSdkScreen(this.routeId);
-
-  /// Identifier understood by the native layer.
-  final String routeId;
-}
-
 /// Public API for initializing and interacting with the native Zing SDK.
-class ZingSdkInitializer {
-  ZingSdkInitializer._();
+class ZingSdk {
+  ZingSdk._();
 
-  static final ZingSdkInitializer instance = ZingSdkInitializer._();
+  static final ZingSdk instance = ZingSdk._();
 
-  bool _isInitialized = false;
-
-  /// Initializes the native SDK if it has not been configured yet.
-  Future<void> initialize() async {
-    if (_isInitialized) {
-      return;
-    }
-
-    await ZingSdkInitializerPlatform.instance.initialize();
-    _isInitialized = true;
+  /// Initializes the native SDK with the given authentication configuration.
+  Future<void> init(SdkAuthentication auth) {
+    return ZingSdkInitializerPlatform.instance.init(auth);
   }
 
-  /// Logs out from the native SDK and allows initializing it again.
-  Future<void> logout() async {
-    await ZingSdkInitializerPlatform.instance.logout();
-    _isInitialized = false;
+  /// Triggers the login flow in the native SDK.
+  Future<void> login() {
+    return ZingSdkInitializerPlatform.instance.login();
   }
 
-  /// Opens one of the predefined SDK screens such as AI chat or schedule.
-  ///
-  /// Throws [StateError] if the SDK has not been initialized yet.
-  Future<void> openScreen(ZingSdkScreen screen) {
-    if (!_isInitialized) {
-      throw StateError(
-        'Zing SDK is not initialized. Call initialize() before opening screens.',
-      );
-    }
+  /// Logs out from the native SDK.
+  Future<void> logout() {
+    return ZingSdkInitializerPlatform.instance.logout();
+  }
 
-    return ZingSdkInitializerPlatform.instance.openScreen(screen.routeId);
+  /// Opens one of the predefined SDK screens.
+  Future<void> openScreen(StartingRoute route) {
+    return ZingSdkInitializerPlatform.instance.openScreen(route);
+  }
+
+  /// Stream of authentication state changes from the native SDK.
+  Stream<SdkAuthState> get authState {
+    return ZingSdkInitializerPlatform.instance.authStateStream;
   }
 }
