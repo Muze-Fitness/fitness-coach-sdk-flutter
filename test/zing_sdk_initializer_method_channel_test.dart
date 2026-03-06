@@ -68,25 +68,6 @@ void main() {
     );
   });
 
-  test('openScreen forwards parameterized WorkoutPreviewRoute', () async {
-    await platform.openScreen(const WorkoutPreviewRoute('w-1'));
-
-    expect(capturedCall?.method, 'openScreen');
-    expect(
-      capturedCall?.arguments,
-      equals({'route': 'workout_preview', 'workoutId': 'w-1'}),
-    );
-  });
-
-  test('openScreen forwards parameterized WorkoutResultRoute', () async {
-    await platform.openScreen(const WorkoutResultRoute('r-1'));
-
-    expect(capturedCall?.method, 'openScreen');
-    expect(
-      capturedCall?.arguments,
-      equals({'route': 'workout_result', 'workoutResultId': 'r-1'}),
-    );
-  });
 }
 
 class _StubCallback implements AuthTokenCallback {

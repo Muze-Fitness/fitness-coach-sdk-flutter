@@ -107,14 +107,6 @@ void main() {
       expect(mockPlatform.lastRoute, isA<AiAssistantRoute>());
     });
 
-    test('openScreen delegates parameterized route', () async {
-      await ZingSdk.instance.openScreen(const WorkoutPreviewRoute('w123'));
-
-      expect(mockPlatform.openScreenCount, equals(1));
-      final route = mockPlatform.lastRoute as WorkoutPreviewRoute;
-      expect(route.workoutId, 'w123');
-    });
-
     test('authState stream emits state changes', () async {
       final states = <SdkAuthState>[];
       final sub = ZingSdk.instance.authState.listen(states.add);
@@ -138,18 +130,6 @@ void main() {
       expect(route.toMap(), {'route': 'custom_workout'});
     });
 
-    test('WorkoutPreviewRoute serializes with workoutId', () {
-      const route = WorkoutPreviewRoute('abc');
-      expect(route.toMap(), {'route': 'workout_preview', 'workoutId': 'abc'});
-    });
-
-    test('WorkoutResultRoute serializes with workoutResultId', () {
-      const route = WorkoutResultRoute('xyz');
-      expect(
-        route.toMap(),
-        {'route': 'workout_result', 'workoutResultId': 'xyz'},
-      );
-    });
   });
 
   group('SdkAuthState deserialization', () {

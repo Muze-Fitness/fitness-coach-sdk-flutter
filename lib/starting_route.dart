@@ -52,33 +52,3 @@ class ProfileSettingsRoute extends StartingRoute {
   String get routeId => 'profile_settings';
 }
 
-class HealthConnectPermissionsRoute extends StartingRoute {
-  const HealthConnectPermissionsRoute();
-
-  @override
-  String get routeId => 'health_connect_permissions';
-}
-
-class WorkoutPreviewRoute extends StartingRoute {
-  const WorkoutPreviewRoute(this.workoutId);
-
-  final String workoutId;
-
-  @override
-  String get routeId => 'workout_preview';
-
-  @override
-  Map<String, String>? get routeArgs => {'workoutId': workoutId};
-}
-
-class WorkoutResultRoute extends StartingRoute {
-  const WorkoutResultRoute(this.workoutResultId);
-
-  final String workoutResultId;
-
-  @override
-  String get routeId => 'workout_result';
-
-  @override
-  Map<String, String>? get routeArgs => {'workoutResultId': workoutResultId};
-}
