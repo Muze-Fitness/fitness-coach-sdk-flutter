@@ -4,9 +4,18 @@ import ZingCoachSDK
 
 public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
     private var sdk: ZingSDK?
+    private var authTokenChannel: FlutterMethodChannel?
+    private var authStateChannel: FlutterEventChannel?
+
+    private enum Channel {
+        static let initializer = "zing_sdk_initializer"
+        static let authState = "zing_sdk_initializer/auth_state"
+        static let authTokenCallback = "zing_sdk_initializer/auth_token_callback"
+    }
 
     private enum Method {
-        static let initialize = "initialize"
+        static let initialize = "init"
+        static let login = "login"
         static let logout = "logout"
         static let openScreen = "openScreen"
     }
@@ -19,110 +28,149 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case profileSettings = "profile_settings"
     }
 
-    private enum ScreenError: Error {
+    enum PluginError: Error {
+        case notInitialized
+        case alreadyInitialized
+        case nativeInitFailed
+        case missingRoute
+        case unknownRoute(String)
         case noRootViewController
     }
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         dispatchPrecondition(condition: .onQueue(.main))
-        let channel = FlutterMethodChannel(
-            name: "zing_sdk_initializer",
+
+        let initializerChannel = FlutterMethodChannel(
+            name: Channel.initializer,
             binaryMessenger: registrar.messenger()
         )
+        let authStateChannel = FlutterEventChannel(
+            name: Channel.authState,
+            binaryMessenger: registrar.messenger()
+        )
+
         let instance = ZingSdkInitializerPlugin()
-        registrar.addMethodCallDelegate(instance, channel: channel)
+        instance.authStateChannel = authStateChannel
+        instance.authTokenChannel = FlutterMethodChannel(
+            name: Channel.authTokenCallback,
+            binaryMessenger: registrar.messenger()
+        )
+
+        registrar.addMethodCallDelegate(instance, channel: initializerChannel)
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case Method.initialize:
-            self.handleInitialize(result: result)
+            handleInitialize(method: call, result)
+        case Method.login:
+            handleLogin(result)
         case Method.logout:
-            self.handleLogout(result: result)
+            handleLogout(result)
         case Method.openScreen:
-            self.handleOpenScreen(call: call, result: result)
+            handleOpenScreen(method: call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
     }
 
-    private func handleInitialize(result: @escaping FlutterResult) {
+    private func handleInitialize(method: FlutterMethodCall, _ completion: @escaping FlutterResult) {
         guard sdk == nil else {
-            result(nil)
-            return
-        }
-
-        Task {
-            let initResult = await ZingSDK.initialize(
-                with: .init(
-                    authentication: .guest(apiKey: "any key"),
-                    errorHandler: self
-                )
-            )
-
-            switch initResult {
-            case .success(let sdkInstance):
-                self.sdk = sdkInstance
-                sdkInstance.login()
-                result(nil)
-            case .failure(let error):
-                result(FlutterError(
-                    code: "native_init_failed",
-                    message: error.localizedDescription,
-                    details: String(describing: error)
-                ))
-            }
-        }
-    }
-
-    private func handleLogout(result: FlutterResult) {
-        sdk?.logout()
-        result(nil)
-    }
-
-    private func handleOpenScreen(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard 
-            let sdk 
-        else {
-            result(FlutterError(
-                code: "sdk_not_initialized",
-                message: "Call initialize first",
-                details: nil
-            ))
+            completion(PluginError.alreadyInitialized.toFlutter())
             return
         }
 
         guard
-            let args = call.arguments as? [String: Any],
-            let rawRoute = args["route"] as? String,
-            let route = Route(rawValue: rawRoute)
+            let args = method.arguments as? [String: Any],
+            let type = args["type"] as? String
         else {
-            result(FlutterError(
-                code: "missing_route",
-                message: "Route argument required",
-                details: nil
-            ))
+            completion(PluginError.nativeInitFailed.toFlutter())
+            return
+        }
+
+        let authentication: ZingSDK.InitializationParameters.AuthenticationType
+        switch type {
+        case "apiKey":
+            guard let key = args["apiKey"] as? String else {
+                completion(PluginError.nativeInitFailed.toFlutter())
+                return
+            }
+            authentication = .apiKey(key: key)
+        case "externalToken":
+            guard let channel = authTokenChannel else {
+                completion(PluginError.nativeInitFailed.toFlutter())
+                return
+            }
+            authentication = .externalToken(provider: AuthAdapter(channel: channel))
+        default:
+            completion(PluginError.nativeInitFailed.toFlutter())
             return
         }
 
         Task { @MainActor in
-            do {
-                let viewController = self.makeViewController(for: route, sdk: sdk)
-                try self.presentViewController(viewController)
-                result(nil)
-            } catch ScreenError.noRootViewController {
-                result(FlutterError(
-                    code: "launch_failed",
-                    message: "No root view controller available",
-                    details: nil
-                ))
-            } catch {
-                result(FlutterError(
-                    code: "launch_failed",
-                    message: error.localizedDescription,
-                    details: String(describing: error)
-                ))
+            let result = await ZingSDK.initialize(
+                with: .init(authentication: authentication, errorHandler: self)
+            )
+            switch result {
+            case .success(let sdkInstance):
+                self.sdk = sdkInstance
+                self.authStateChannel?.setStreamHandler(AuthStateStreamHandler(sdk: sdkInstance))
+                completion(nil)
+            case .failure:
+                completion(PluginError.nativeInitFailed.toFlutter())
             }
+        }
+    }
+
+    private func handleLogin(_ completion: @escaping FlutterResult) {
+        guard let sdk else {
+            completion(PluginError.notInitialized.toFlutter())
+            return
+        }
+        Task { @MainActor in
+            switch await sdk.login() {
+            case .success:
+                completion(nil)
+            case .failure(let error):
+                completion(error.toFlutter())
+            }
+        }
+    }
+
+    private func handleLogout(_ completion: @escaping FlutterResult) {
+        guard let sdk else {
+            completion(PluginError.notInitialized.toFlutter())
+            return
+        }
+        Task { @MainActor in
+            switch await sdk.logout() {
+            case .success:
+                completion(nil)
+            case .failure(let error):
+                completion(error.toFlutter())
+            }
+        }
+    }
+
+    private func handleOpenScreen(method: FlutterMethodCall, _ completion: @escaping FlutterResult) {
+        guard let sdk else {
+            completion(PluginError.notInitialized.toFlutter())
+            return
+        }
+        guard
+            let args = method.arguments as? [String: Any],
+            let rawRoute = args["route"] as? String
+        else {
+            completion(PluginError.missingRoute.toFlutter())
+            return
+        }
+        guard let route = ZingSdkInitializerPlugin.Route(rawValue: rawRoute) else {
+            completion(PluginError.unknownRoute(rawRoute).toFlutter())
+            return
+        }
+        Task { @MainActor in
+            let viewController = makeViewController(for: route, sdk: sdk)
+            presentViewController(viewController, completion: completion)
         }
     }
 
@@ -136,46 +184,35 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case .workoutPlanDetails:
             sdk.makeProgramModule()
         case .fullSchedule:
-            sdk.makeProgramModule()
+            sdk.makeFullSchedule()
         case .profileSettings:
             sdk.makeProfileSettings()
         }
     }
 
     @MainActor
-    private func presentViewController(_ viewController: UIViewController) throws {
+    private func presentViewController(_ viewController: UIViewController, completion: @escaping FlutterResult) {
         guard
             let scene = UIApplication.shared.currentScene,
-            let firstWindow = scene.windows.first,
-            let rootViewController = firstWindow.rootViewController
+            let rootViewController = scene.keyWindow?.rootViewController
         else {
-            throw ScreenError.noRootViewController
+            completion(PluginError.noRootViewController.toFlutter())
+            return
         }
 
         let presenter = rootViewController.topPresentedViewController.topInNavigationController
         viewController.modalPresentationStyle = .fullScreen
         presenter.present(viewController, animated: true)
+        completion(nil)
     }
 }
 
 extension ZingSdkInitializerPlugin: ZingSDK.ErrorHandler {
     public func didReceiveError(_ error: ZingSDK.Error) {
-        print("[ZingSdkInitializer] SDK Error: \(error)")
-    }
-}
-
-private extension UIApplication {
-    var currentScene: UIWindowScene? {
-        connectedScenes.first { $0.activationState == .foregroundActive } as? UIWindowScene
-    }
-}
-
-private extension UIViewController {
-    var topPresentedViewController: UIViewController {
-        presentedViewController.flatMap { $0.topPresentedViewController } ?? self
-    }
-
-    var topInNavigationController: UIViewController {
-        (self as? UINavigationController)?.topViewController ?? self
+        if case .authError(.badToken) = error {
+            DispatchQueue.main.async { [weak self] in
+                self?.authTokenChannel?.invokeMethod("onTokenInvalid", arguments: nil)
+            }
+        }
     }
 }
