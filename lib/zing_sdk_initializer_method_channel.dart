@@ -30,7 +30,9 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   Future<void> init(SdkAuthentication auth) {
     final Map<String, dynamic> args;
     switch (auth) {
-      case SdkApiKeyAuth(:final apiKey):
+      case SdkPlatformApiKeyAuth(:final ios, :final android):
+        final apiKey =
+            defaultTargetPlatform == TargetPlatform.iOS ? ios : android;
         args = {'type': 'apiKey', 'apiKey': apiKey};
       case SdkExternalTokenAuth(:final callback):
         _authTokenCallback = callback;

@@ -45,6 +45,13 @@ class FullScheduleRoute extends StartingRoute {
   String get routeId => 'full_schedule';
 }
 
+class HomeRoute extends StartingRoute {
+  const HomeRoute();
+
+  @override
+  String get routeId => 'home';
+}
+
 class ProfileSettingsRoute extends StartingRoute {
   const ProfileSettingsRoute();
 

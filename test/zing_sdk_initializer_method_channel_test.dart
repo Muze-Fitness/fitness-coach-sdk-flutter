@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
@@ -24,13 +25,35 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('init with apiKey sends correct arguments', () async {
-    await platform.init(const SdkAuthentication.apiKey('my-key'));
+  test('init with apiKey sends correct android arguments', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await platform.init(const SdkAuthentication.apiKey(
+      ios: 'ios-key',
+      android: 'android-key',
+    ));
 
     expect(capturedCall?.method, 'init');
     expect(
       capturedCall?.arguments,
-      equals({'type': 'apiKey', 'apiKey': 'my-key'}),
+      equals({'type': 'apiKey', 'apiKey': 'android-key'}),
+    );
+  });
+
+  test('init with apiKey sends correct ios arguments', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await platform.init(const SdkAuthentication.apiKey(
+      ios: 'ios-key',
+      android: 'android-key',
+    ));
+
+    expect(capturedCall?.method, 'init');
+    expect(
+      capturedCall?.arguments,
+      equals({'type': 'apiKey', 'apiKey': 'ios-key'}),
     );
   });
 
