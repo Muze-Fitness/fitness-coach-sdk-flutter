@@ -10,7 +10,7 @@ Future<void> main() async {
 
   try {
     await ZingSdk.instance.init(
-      SdkAuthentication.apiKey('2QClmj1z.VFuF5vEgYtoogpVTvmu97o0vwOQPPSZ9'),
+      SdkAuthentication.apiKey('api-key'),
     );
   } on PlatformException catch (error, stackTrace) {
     debugPrintStack(stackTrace: stackTrace);
