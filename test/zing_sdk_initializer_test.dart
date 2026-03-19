@@ -80,12 +80,17 @@ void main() {
     });
 
     test('init delegates to platform with apiKey auth', () async {
-      const auth = SdkAuthentication.apiKey('test-key');
+      const auth = SdkAuthentication.apiKey(
+        ios: 'ios-key',
+        android: 'android-key',
+      );
       await ZingSdk.instance.init(auth);
 
       expect(mockPlatform.initCount, equals(1));
-      expect(mockPlatform.lastAuth, isA<SdkApiKeyAuth>());
-      expect((mockPlatform.lastAuth as SdkApiKeyAuth).apiKey, 'test-key');
+      expect(mockPlatform.lastAuth, isA<SdkPlatformApiKeyAuth>());
+      final apiKeyAuth = mockPlatform.lastAuth as SdkPlatformApiKeyAuth;
+      expect(apiKeyAuth.ios, 'ios-key');
+      expect(apiKeyAuth.android, 'android-key');
     });
 
     test('login delegates to platform', () async {

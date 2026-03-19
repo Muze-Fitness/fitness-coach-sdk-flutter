@@ -10,7 +10,10 @@ Future<void> main() async {
 
   try {
     await ZingSdk.instance.init(
-      SdkAuthentication.apiKey('api-key'),
+      SdkAuthentication.apiKey(
+        ios: 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf',
+        android: 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S',
+      ),
     );
   } on PlatformException catch (error, stackTrace) {
     debugPrintStack(stackTrace: stackTrace);
@@ -54,6 +57,7 @@ class _HomePageState extends State<HomePage> {
     ('AI Assistant', AiAssistantRoute()),
     ('Workout Plan Details', WorkoutPlanDetailsRoute()),
     ('Full Schedule', FullScheduleRoute()),
+    ('Home', HomeRoute()),
     ('Profile Settings', ProfileSettingsRoute()),
   ];
 

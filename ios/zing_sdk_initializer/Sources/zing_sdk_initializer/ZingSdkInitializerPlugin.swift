@@ -25,6 +25,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case aiAssistant = "ai_assistant"
         case workoutPlanDetails = "workout_plan_details"
         case fullSchedule = "full_schedule"
+        case home = "home"
         case profileSettings = "profile_settings"
     }
 
@@ -182,9 +183,11 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case .aiAssistant:
             sdk.makeAssistantChat()
         case .workoutPlanDetails:
-            sdk.makeProgramModule()
+            sdk.makeFullSchedule()
         case .fullSchedule:
             sdk.makeFullSchedule()
+        case .home:
+            sdk.makeProgramModule()
         case .profileSettings:
             sdk.makeProfileSettings()
         }

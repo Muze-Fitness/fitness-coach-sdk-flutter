@@ -16,19 +16,23 @@ abstract interface class AuthTokenCallback {
 sealed class SdkAuthentication {
   const SdkAuthentication();
 
-  /// Authenticate using a static API key.
-  const factory SdkAuthentication.apiKey(String apiKey) = SdkApiKeyAuth;
+  /// Authenticate using platform-specific API keys.
+  const factory SdkAuthentication.apiKey({
+    required String ios,
+    required String android,
+  }) = SdkPlatformApiKeyAuth;
 
   /// Authenticate using an external token provider.
   const factory SdkAuthentication.externalToken(AuthTokenCallback callback) =
       SdkExternalTokenAuth;
 }
 
-/// API-key based authentication.
-class SdkApiKeyAuth extends SdkAuthentication {
-  const SdkApiKeyAuth(this.apiKey);
+/// Platform-specific API-key authentication.
+class SdkPlatformApiKeyAuth extends SdkAuthentication {
+  const SdkPlatformApiKeyAuth({required this.ios, required this.android});
 
-  final String apiKey;
+  final String ios;
+  final String android;
 }
 
 /// External token authentication delegating to [AuthTokenCallback].
