@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>We use your health data to personalize workouts and track your fitness progress.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>We save your workout data to Apple Health for comprehensive fitness tracking.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera for various Computer Vision features and AI Assistant chat.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library for photo-enabled interactions with the AI Assistant.</string>
 </dict>
 </plist>
