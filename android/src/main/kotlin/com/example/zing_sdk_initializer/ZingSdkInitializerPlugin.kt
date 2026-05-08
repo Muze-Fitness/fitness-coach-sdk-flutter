@@ -1,7 +1,9 @@
 package com.example.zing_sdk_initializer
 
 import android.content.Context
+import android.graphics.Typeface
 import android.util.Log
+import androidx.core.content.res.ResourcesCompat
 import coach.zing.fitness.coach.CoachesAvailability
 import coach.zing.fitness.coach.Configuration
 import coach.zing.fitness.coach.GenderAvailability
@@ -98,8 +100,9 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
                     else -> throw IllegalArgumentException("Unknown auth type: $type")
                 }
+
                 val themeMap = call.argument<Map<String, Any>>("theme")
-                val theme = themeMap?.let { buildTheme(it) }
+                val theme = buildTheme(themeMap)
 
                 val configMap = call.argument<Map<String, Any>>("configuration")
                 val configuration = configMap?.let { buildConfiguration(it) }
@@ -212,42 +215,97 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
     }
 
-    private fun buildTheme(themeMap: Map<String, Any>): ZingSdkTheme? {
-        @Suppress("UNCHECKED_CAST")
+    private fun buildTheme(themeMap: Map<String, Any>?): ZingSdkTheme? {
+        val colors = themeMap?.let { buildColors(it) }
+        val typography = themeMap?.let { buildTypography(it) }
+        val assets = buildAssets()
+        val cornerRadius = themeMap?.let { buildCornerRadius(it) }
+        if (colors == null && typography == null && assets == null && cornerRadius == null) return null
+        return ZingSdkTheme(
+            colors = colors,
+            typography = typography,
+            assets = assets,
+            cornerRadius = cornerRadius,
+        )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun buildColors(themeMap: Map<String, Any>): ZingSdkTheme.Colors? {
         val colorsMap = themeMap["colors"] as? Map<String, Any> ?: return null
-
         fun color(key: String): Long? = (colorsMap[key] as? Number)?.toLong()
-
-        val colors = ZingSdkTheme.Colors(
+        return ZingSdkTheme.Colors(
             brandPrimary = color("brand/primary"),
             brandSecondary = color("brand/secondary"),
-            brandTertiary = color("brand/tertiary"),
-            textHeadlineDarkPrimary = color("text/heading/dark-primary"),
-            textHeadlineLightPrimary = color("text/heading/light-primary"),
+            textHeadingDarkPrimary = color("text/heading/dark-primary"),
+            textHeadingLightPrimary = color("text/heading/light-primary"),
             textBodyDarkPrimary = color("text/body/dark-primary"),
             textBodyDarkSecondary = color("text/body/dark-secondary"),
-            textBodyLightPrimary = color("text/body/light-primary"),
-            textBodyLightSecondary = color("text/body/light-secondary"),
-            textBodyBluePrimary = color("text/body/blue-primary"),
-            textBodyBlueSecondary = color("text/body/blue-secondary"),
-            textBodyYellowPrimary = color("text/body/yellow-primary"),
-            textBodyOrchidPrimary = color("text/body/orchid-primary"),
-            overlayBlackDark = color("overlay/black-dark"),
-            overlayBlackMedium = color("overlay/black-medium"),
-            overlayCadetMedium = color("overlay/cadet-medium"),
-            buttonBgDarkPrimary = color("button/bg-dark-primary"),
-            buttonBgDarkSecondary = color("button/bg-dark-secondary"),
-            buttonBgLightPrimary = color("button/bg-light-primary"),
-            buttonBgLightSecondary = color("button/bg-light-secondary"),
-            buttonBgLightYellow = color("button/bg-light-yellow"),
-            buttonBgLightOrchid = color("button/bg-light-orchid"),
-            buttonBgLightBlue = color("button/bg-light-blue"),
-            buttonBgIconTransparent = color("button/bg-icon-transparent"),
-            bgWrite = color("bg/white"),
-            bgLightGrey = color("bg/light-grey"),
+            buttonPrimary = color("button/primary"),
+            buttonSecondary = color("button/secondary"),
+            bgPrimary = color("bg/primary"),
+            bgSecondary = color("bg/secondary"),
         )
+    }
 
-        return ZingSdkTheme(colors = colors)
+    @Suppress("UNCHECKED_CAST")
+    private fun buildTypography(themeMap: Map<String, Any>): ZingSdkTheme.Typography? {
+        val typographyMap = themeMap["typography"] as? Map<String, Any> ?: return null
+        val context = activityContext ?: return null
+        val system = (typographyMap["system"] as? String)?.let { loadFont(context, it) }
+        val brand = (typographyMap["brand"] as? String)?.let { loadFont(context, it) }
+        if (system == null && brand == null) return null
+        return ZingSdkTheme.Typography(system = system, brand = brand)
+    }
+
+    private fun loadFont(context: Context, fontName: String): Typeface? {
+        val resId = context.resources.getIdentifier(fontName, "font", context.packageName)
+        if (resId == 0) {
+            Log.w(TAG, "Font not found in host res/font: $fontName")
+            return null
+        }
+        return ResourcesCompat.getFont(context, resId)
+    }
+
+    private fun buildAssets(): ZingSdkTheme.Assets? {
+        val context = activityContext ?: return null
+
+        fun drawable(name: String): Int? {
+            val id = context.resources.getIdentifier(name, "drawable", context.packageName)
+            return if (id != 0) id else null
+        }
+
+        val planBackground = drawable("zing_plan_background")
+        val welcomePicture = drawable("zing_welcome_picture")
+        val coachAsset = ZingSdkTheme.Assets.CoachAsset(
+            john = drawable("zing_coach_john"),
+            jennifer = drawable("zing_coach_jennifer"),
+            sarah = drawable("zing_coach_sarah"),
+            chris = drawable("zing_coach_chris"),
+        )
+        val hasCoach = coachAsset.john != null || coachAsset.jennifer != null ||
+                coachAsset.sarah != null || coachAsset.chris != null
+
+        if (planBackground == null && welcomePicture == null && !hasCoach) return null
+        return ZingSdkTheme.Assets(
+            planBackground = planBackground,
+            welcomePicture = welcomePicture,
+            coachImages = if (hasCoach) coachAsset else null,
+        )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun buildCornerRadius(themeMap: Map<String, Any>): ZingSdkTheme.CornerRadius? {
+        val cornerMap = themeMap["cornersRounding"] as? Map<String, Any> ?: return null
+        val buttonMap = cornerMap["button/border"] as? Map<String, Any> ?: return null
+        val sdkRadius = when (buttonMap["type"] as? String) {
+            "pill" -> ZingSdkTheme.CornerRadius.SdkRadius.Pill
+            "value" -> {
+                val value = (buttonMap["value"] as? Number)?.toInt() ?: 0
+                ZingSdkTheme.CornerRadius.SdkRadius.Value(value)
+            }
+            else -> return null
+        }
+        return ZingSdkTheme.CornerRadius(button = sdkRadius)
     }
 
     private fun buildConfiguration(configMap: Map<String, Any>): Configuration {

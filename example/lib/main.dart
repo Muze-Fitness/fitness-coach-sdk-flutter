@@ -22,7 +22,9 @@ Future<void> main() async {
         colors: SdkColors(
           brandPrimary: Color(0xFFF2001F),
           brandSecondary: Color(0xFF980052),
-          brandTertiary: Color(0xFF1D212C),
+        ),
+        cornersRounding: SdkCornerRounding(
+          buttonBorder: SdkRadius.value(0),
         ),
       ),
     );

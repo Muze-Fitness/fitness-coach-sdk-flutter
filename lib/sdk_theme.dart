@@ -4,10 +4,11 @@ import 'dart:ui';
 ///
 /// Any field left `null` falls back to the SDK's built-in defaults.
 class SdkTheme {
-  const SdkTheme({this.colors, this.cornersRounding});
+  const SdkTheme({this.colors, this.cornersRounding, this.typography});
 
   final SdkColors? colors;
   final SdkCornerRounding? cornersRounding;
+  final SdkTypography? typography;
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
@@ -15,74 +16,41 @@ class SdkTheme {
     if (cornersRounding != null) {
       map['cornersRounding'] = cornersRounding!.toMap();
     }
+    if (typography != null) map['typography'] = typography!.toMap();
     return map;
   }
 }
 
-/// Color overrides keyed by the designer token path shared across platforms
-/// (e.g. `brand/primary`, `overlay/black-dark`). Each field is optional;
-/// unset fields keep the SDK default.
+/// Color overrides matching the native SDK's semantic color set.
+/// Each field is optional; unset fields keep the SDK default.
 class SdkColors {
   const SdkColors({
     this.brandPrimary,
     this.brandSecondary,
-    this.brandTertiary,
     this.textHeadingDarkPrimary,
     this.textHeadingLightPrimary,
     this.textBodyDarkPrimary,
     this.textBodyDarkSecondary,
-    this.textBodyLightPrimary,
-    this.textBodyLightSecondary,
-    this.textBodyBluePrimary,
-    this.textBodyBlueSecondary,
-    this.textBodyYellowPrimary,
-    this.textBodyOrchidPrimary,
-    this.overlayBlackDark,
-    this.overlayBlackMedium,
-    this.overlayCadetMedium,
-    this.buttonBgDarkPrimary,
-    this.buttonBgDarkSecondary,
-    this.buttonBgLightPrimary,
-    this.buttonBgLightSecondary,
-    this.buttonBgLightYellow,
-    this.buttonBgLightOrchid,
-    this.buttonBgLightBlue,
-    this.buttonBgIconTransparent,
-    this.bgWhite,
-    this.bgLightGrey,
+    this.buttonPrimary,
+    this.buttonSecondary,
+    this.bgPrimary,
+    this.bgSecondary,
   });
 
   final Color? brandPrimary;
   final Color? brandSecondary;
-  final Color? brandTertiary;
 
   final Color? textHeadingDarkPrimary;
   final Color? textHeadingLightPrimary;
 
   final Color? textBodyDarkPrimary;
   final Color? textBodyDarkSecondary;
-  final Color? textBodyLightPrimary;
-  final Color? textBodyLightSecondary;
-  final Color? textBodyBluePrimary;
-  final Color? textBodyBlueSecondary;
-  final Color? textBodyYellowPrimary;
-  final Color? textBodyOrchidPrimary;
 
-  final Color? overlayBlackDark;
-  final Color? overlayBlackMedium;
-  final Color? overlayCadetMedium;
+  final Color? buttonPrimary;
+  final Color? buttonSecondary;
 
-  final Color? buttonBgDarkPrimary;
-  final Color? buttonBgDarkSecondary;
-  final Color? buttonBgLightPrimary;
-  final Color? buttonBgLightSecondary;
-  final Color? buttonBgLightYellow;
-  final Color? buttonBgLightOrchid;
-  final Color? buttonBgLightBlue;
-  final Color? buttonBgIconTransparent;
-
-  final Color? bgWhite;
-  final Color? bgLightGrey;
+  final Color? bgPrimary;
+  final Color? bgSecondary;
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
@@ -92,42 +60,44 @@ class SdkColors {
 
     put('brand/primary', brandPrimary);
     put('brand/secondary', brandSecondary);
-    put('brand/tertiary', brandTertiary);
 
     put('text/heading/dark-primary', textHeadingDarkPrimary);
     put('text/heading/light-primary', textHeadingLightPrimary);
 
     put('text/body/dark-primary', textBodyDarkPrimary);
     put('text/body/dark-secondary', textBodyDarkSecondary);
-    put('text/body/light-primary', textBodyLightPrimary);
-    put('text/body/light-secondary', textBodyLightSecondary);
-    put('text/body/blue-primary', textBodyBluePrimary);
-    put('text/body/blue-secondary', textBodyBlueSecondary);
-    put('text/body/yellow-primary', textBodyYellowPrimary);
-    put('text/body/orchid-primary', textBodyOrchidPrimary);
 
-    put('overlay/black-dark', overlayBlackDark);
-    put('overlay/black-medium', overlayBlackMedium);
-    put('overlay/cadet-medium', overlayCadetMedium);
+    put('button/primary', buttonPrimary);
+    put('button/secondary', buttonSecondary);
 
-    put('button/bg-dark-primary', buttonBgDarkPrimary);
-    put('button/bg-dark-secondary', buttonBgDarkSecondary);
-    put('button/bg-light-primary', buttonBgLightPrimary);
-    put('button/bg-light-secondary', buttonBgLightSecondary);
-    put('button/bg-light-yellow', buttonBgLightYellow);
-    put('button/bg-light-orchid', buttonBgLightOrchid);
-    put('button/bg-light-blue', buttonBgLightBlue);
-    put('button/bg-icon-transparent', buttonBgIconTransparent);
-
-    put('bg/white', bgWhite);
-    put('bg/light-grey', bgLightGrey);
+    put('bg/primary', bgPrimary);
+    put('bg/secondary', bgSecondary);
 
     return map;
   }
 }
 
-/// Corner-radius overrides keyed by the designer token path shared across
-/// platforms (e.g. `button/border`). Each field is optional; unset fields keep
+/// Typography overrides. Each field is the resource name of a font file
+/// in the host app's platform font resources
+/// (Android: `res/font/`, iOS: registered font family name).
+class SdkTypography {
+  const SdkTypography({this.system, this.brand});
+
+  /// System (body/UI) font resource name.
+  final String? system;
+
+  /// Brand (display/heading) font resource name.
+  final String? brand;
+
+  Map<String, dynamic> toMap() {
+    final map = <String, dynamic>{};
+    if (system != null) map['system'] = system;
+    if (brand != null) map['brand'] = brand;
+    return map;
+  }
+}
+
+/// Corner-radius overrides. Each field is optional; unset fields keep
 /// the SDK default.
 class SdkCornerRounding {
   const SdkCornerRounding({this.buttonBorder});

@@ -2,8 +2,6 @@ import UIKit
 import DesignSystem
 
 struct FlutterTheme {
-    private let customFontFamily = "CustomFontFamily"
-
     let arguments: [String: Any]
 
     func build() -> DesignSystem.Theme {
@@ -22,10 +20,44 @@ struct FlutterTheme {
 
         let colors = rawColors
             .compactMapValues { $0 as? Int }
-            .filter { ColorToken(token: $0.key) != nil }
             .mapValues(UIColor.init(argb:))
 
-        return TokenProvider { colors[$0.token] }
+        return TokenProvider { token in
+            switch token {
+            case .brand(.primary):
+                return colors["brand/primary"]
+
+            case .brand(.secondary):
+                return colors["brand/secondary"]
+
+            case .textHeading(.darkPrimary):
+                return colors["text/heading/dark-primary"]
+            
+            case .textHeading(.lightPrimary):
+                return colors["text/heading/light-primary"]
+
+            case .textBody(.darkPrimary):
+                return colors["text/body/dark-primary"]
+
+            case .textBody(.darkSecondary):
+                return colors["text/body/dark-secondary"]
+
+            case .buttonBackground(.darkPrimary):
+                return colors["button/primary"]
+
+            case .buttonBackground(.lightSecondary):
+                return colors["button/secondary"]
+
+            case .background(.white):
+                return colors["bg/primary"]
+
+            case .background(.lightGrey):
+                return colors["bg/secondary"]
+
+            default:
+                return nil
+            }
+        }
     }
 
     private func cornersRoundingProvider() -> TokenProvider<RadiusToken, RadiusAttribute>? {
@@ -42,12 +74,36 @@ struct FlutterTheme {
     }
 
     private func typographyProvider() -> TokenProvider<TypographyToken, TypographyAttributes>? {
-        guard UIFont.familyNames.contains(customFontFamily) else {
+        guard let rawTypography = arguments["typography"] as? [String: Any] else {
             return nil
         }
 
-        return TokenProvider { _ in
-            TypographyAttributes(fontFamily: customFontFamily)
+        let system = rawTypography["system"] as? String
+        let brand = rawTypography["brand"] as? String
+
+        return TokenProvider { token in
+            let family: String?
+            switch token {
+            case .heading(.h1),
+                 .heading(.h2),
+                 .heading(.h3),
+                 .bodyOutfit,
+                 .counter,
+                 .coach(.name):
+                family = brand
+
+            case .heading(.h4),
+                 .heading(.h4Semi),
+                 .bodySystem,
+                 .coach(.chat),
+                 .coach(.remark),
+                 .ui:
+                family = system
+            }
+
+            return family.map {
+                TypographyAttributes(fontFamily: $0)
+            }
         }
     }
 

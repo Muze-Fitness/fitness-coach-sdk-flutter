@@ -114,8 +114,6 @@ void main() {
       theme: const SdkTheme(
         colors: SdkColors(
           brandPrimary: Color(0xFFFF0000),
-          overlayBlackDark: Color(0xA0000000),
-          bgLightGrey: Color(0x80123456),
         ),
         cornersRounding: SdkCornerRounding(buttonBorder: SdkRadius.value(16.0)),
       ),
