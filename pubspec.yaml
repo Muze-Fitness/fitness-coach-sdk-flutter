@@ -1,6 +1,6 @@
 name: zing_sdk_initializer
 description: "Flutter plugin for Zing SDK"
-version: 1.0.1
+version: 1.1.0
 homepage:
 
 environment:
