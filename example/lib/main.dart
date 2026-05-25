@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
+import 'language_settings_button.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -158,6 +159,13 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 8),
             ],
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: LanguageSettingsButton(
+                packageName: 'com.example.zing_sdk_flutter',
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),

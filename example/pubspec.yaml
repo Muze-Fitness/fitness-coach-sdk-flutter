@@ -34,6 +34,8 @@ dependencies:
   zing_sdk_initializer:
     path: ../
 
+  android_intent_plus: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
