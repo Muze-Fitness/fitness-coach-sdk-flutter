@@ -87,7 +87,7 @@ struct FlutterTheme {
             case .heading(.h1),
                  .heading(.h2),
                  .heading(.h3),
-                 .bodyOutfit,
+                 .bodyBrand,
                  .counter,
                  .coach(.name):
                 family = brand
