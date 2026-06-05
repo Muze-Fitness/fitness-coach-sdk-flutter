@@ -221,9 +221,9 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case .bodyScan:
             sdk.makeBodyScan()
         case .flexibilityTest:
-            sdk.makeFlexibilityTest()
+            sdk.makeFlexibilityTest(useFrontCamera: true)
         case .fitnessTest:
-            sdk.makeFitnessTest()
+            sdk.makeFitnessTest(useFrontCamera: true)
         }
     }
 
