@@ -36,6 +36,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private const val METHOD_LOGIN = "login"
         private const val METHOD_LOGOUT = "logout"
         private const val METHOD_OPEN_SCREEN = "openScreen"
+        private const val METHOD_REGISTER_BACKGROUND_SETUP = "registerBackgroundSetup"
         private const val ARG_ROUTE = "route"
 
         private object RouteKeys {
@@ -52,9 +53,11 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private lateinit var authStateEventChannel: EventChannel
     private lateinit var authTokenCallbackChannel: MethodChannel
     private var activityContext: Context? = null
+    private var appContext: Context? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        appContext = binding.applicationContext
         channel = MethodChannel(binding.binaryMessenger, CHANNEL_NAME)
         channel.setMethodCallHandler(this)
 
@@ -77,6 +80,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             METHOD_LOGIN -> handleLogin(result)
             METHOD_LOGOUT -> handleLogout(result)
             METHOD_OPEN_SCREEN -> handleOpenScreen(call, result)
+            METHOD_REGISTER_BACKGROUND_SETUP -> handleRegisterBackgroundSetup(call, result)
             else -> result.notImplemented()
         }
     }
@@ -152,6 +156,27 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 )
             }
         }
+    }
+
+    private fun handleRegisterBackgroundSetup(call: MethodCall, result: MethodChannel.Result) {
+        val dispatcher = call.argument<Long>("dispatcher")
+        val setup = call.argument<Long>("setup")
+        val context = appContext
+        if (dispatcher == null || setup == null || context == null) {
+            result.error(
+                "register_background_setup_failed",
+                "Missing dispatcher/setup handle or application context",
+                null
+            )
+            return
+        }
+        context.getSharedPreferences(ZingBackgroundPrefs.NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putLong(ZingBackgroundPrefs.KEY_DISPATCHER, dispatcher)
+            .putLong(ZingBackgroundPrefs.KEY_SETUP, setup)
+            .apply()
+        Log.i(TAG, "Registered background setup handles")
+        result.success(null)
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -319,9 +344,11 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             "binary" -> GenderAvailability.BINARY
             else -> null
         }
+        val healthBackgroundSync = configMap["healthBackgroundSync"] as? Boolean ?: false
         return Configuration(
             coachesAvailability = coachesAvailability,
             genderAvailability = genderAvailability,
+            healthConnectBackgroundSync = healthBackgroundSync,
         )
     }
 }

@@ -1,5 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
@@ -59,6 +62,27 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   }
 
   @override
+  Future<void> registerBackgroundSetup(Future<void> Function() setup) async {
+    // Background sync is Android-only; no-op on other platforms so consumers
+    // can call this unconditionally without platform checks.
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+
+    final dispatcher =
+        PluginUtilities.getCallbackHandle(_zingSdkBackgroundDispatcher);
+    final userSetup = PluginUtilities.getCallbackHandle(setup);
+    if (dispatcher == null || userSetup == null) {
+      throw ArgumentError(
+        'registerBackgroundSetup requires a top-level or static function '
+        "annotated with @pragma('vm:entry-point').",
+      );
+    }
+    await methodChannel.invokeMethod<void>('registerBackgroundSetup', {
+      'dispatcher': dispatcher.toRawHandle(),
+      'setup': userSetup.toRawHandle(),
+    });
+  }
+
+  @override
   Future<void> login() {
     return methodChannel.invokeMethod<void>('login');
   }
@@ -99,4 +123,26 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
       }
     });
   }
+}
+
+/// Entry point executed by the native side in a headless background isolate.
+///
+/// Owned by the SDK (the consumer never references it). It looks up the
+/// consumer's registered setup function by its callback handle and runs it.
+@pragma('vm:entry-point')
+void _zingSdkBackgroundDispatcher() {
+  WidgetsFlutterBinding.ensureInitialized();
+  const channel = MethodChannel('zing_sdk_initializer/background');
+  channel.setMethodCallHandler((call) async {
+    if (call.method == 'runSetup') {
+      final handle = CallbackHandle.fromRawHandle(call.arguments as int);
+      final setup =
+          PluginUtilities.getCallbackFromHandle(handle) as Future<void>
+              Function()?;
+      await setup?.call();
+    }
+    return null;
+  });
+  // Signal native that the isolate is ready to receive `runSetup`.
+  channel.invokeMethod('ready');
 }

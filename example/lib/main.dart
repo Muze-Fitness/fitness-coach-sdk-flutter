@@ -5,29 +5,43 @@ import 'package:flutter/services.dart';
 
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 
+/// SDK setup used both on app startup (foreground) and in the headless background
+/// isolate (Health Connect background sync). Must be a top-level function annotated
+/// with `@pragma('vm:entry-point')` so it survives tree-shaking and can be looked up
+/// by the native side in a fresh isolate.
+@pragma('vm:entry-point')
+Future<void> zingSdkSetup() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ZingSdk.instance.init(
+    authentication: SdkAuthentication.apiKey(
+      ios: 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf',
+      android: 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S',
+    ),
+    configuration: const SdkConfiguration(
+      coachesAvailability: CoachesAvailability.userGenderBased,
+      genderAvailability: GenderAvailability.binary,
+      healthBackgroundSync: true,
+    ),
+    theme: const SdkTheme(
+      colors: SdkColors(
+        brandPrimary: Color(0xFFF2001F),
+        brandSecondary: Color(0xFF980052),
+      ),
+      cornersRounding: SdkCornerRounding(
+        buttonBorder: SdkRadius.value(0),
+      ),
+    ),
+  );
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    await ZingSdk.instance.init(
-      authentication: SdkAuthentication.apiKey(
-        ios: 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf',
-        android: 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S',
-      ),
-      configuration: const SdkConfiguration(
-        coachesAvailability: CoachesAvailability.userGenderBased,
-        genderAvailability: GenderAvailability.binary,
-      ),
-      theme: const SdkTheme(
-        colors: SdkColors(
-          brandPrimary: Color(0xFFF2001F),
-          brandSecondary: Color(0xFF980052),
-        ),
-        cornersRounding: SdkCornerRounding(
-          buttonBorder: SdkRadius.value(0),
-        ),
-      ),
-    );
+    await zingSdkSetup();
+    // Register the same setup so the native side can run it in a headless isolate
+    // when the process is started in the background (alarm / reboot) for HC sync.
+    await ZingSdk.instance.registerBackgroundSetup(zingSdkSetup);
   } on PlatformException catch (error, stackTrace) {
     debugPrintStack(stackTrace: stackTrace);
   }

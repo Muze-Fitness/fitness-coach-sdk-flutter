@@ -31,6 +31,17 @@ class ZingSdk {
     );
   }
 
+  /// Registers the entry point that re-initializes the SDK in a headless
+  /// background isolate (used for Health Connect background sync when the app
+  /// is launched in the background without an Activity).
+  ///
+  /// [setup] MUST be a top-level or static function annotated with
+  /// `@pragma('vm:entry-point')`. It should call [init] (the same way you do on
+  /// app startup). Call this once during normal app startup, e.g. in `main()`.
+  Future<void> registerBackgroundSetup(Future<void> Function() setup) {
+    return ZingSdkInitializerPlatform.instance.registerBackgroundSetup(setup);
+  }
+
   /// Triggers the login flow in the native SDK.
   Future<void> login() {
     return ZingSdkInitializerPlatform.instance.login();
