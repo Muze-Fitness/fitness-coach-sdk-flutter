@@ -72,6 +72,9 @@ class _HomePageState extends State<HomePage> {
     ('Workout Plan Details', WorkoutPlanDetailsRoute()),
     ('Full Schedule', FullScheduleRoute()),
     ('Profile Settings', ProfileSettingsRoute()),
+    ('Body Scan', BodyScanRoute()),
+    ('Flexibility Test', FlexibilityTestRoute()),
+    ('Fitness Test', FitnessTestRoute())
   ];
 
   @override
