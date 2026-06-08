@@ -28,6 +28,9 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case fullSchedule = "full_schedule"
         case home = "home"
         case profileSettings = "profile_settings"
+        case bodyScan = "body_scan"
+        case flexibilityTest = "flexibility_test"
+        case fitnessTest = "fitness_test"
     }
 
     enum PluginError: Error {
@@ -215,6 +218,12 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             sdk.makeProgramModule()
         case .profileSettings:
             sdk.makeProfileSettings()
+        case .bodyScan:
+            sdk.makeBodyScan()
+        case .flexibilityTest:
+            sdk.makeFlexibilityTest(useFrontCamera: true)
+        case .fitnessTest:
+            sdk.makeFitnessTest(useFrontCamera: true)
         }
     }
 
