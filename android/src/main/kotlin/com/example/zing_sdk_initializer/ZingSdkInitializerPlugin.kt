@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 
 class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
 
@@ -54,6 +55,13 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private lateinit var authTokenCallbackChannel: MethodChannel
     private var activityContext: Context? = null
     private var appContext: Context? = null
+
+    /**
+     * Set to true by [ZingBackgroundEngine] for the plugin instance attached to the headless
+     * background engine. Background init defers to a foreground init (see [ZingInitGuard]).
+     */
+    var isBackground: Boolean = false
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -69,6 +77,9 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        // When the foreground (UI) engine goes away, its auth binding is no longer live. Clear the
+        // flag so the next background sync re-establishes the SDK via the headless engine.
+        if (!isBackground) ZingInitGuard.foregroundStarted = false
         channel.setMethodCallHandler(null)
         authStateEventChannel.setStreamHandler(null)
         scope.cancel()
@@ -111,8 +122,15 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 val configMap = call.argument<Map<String, Any>>("configuration")
                 val configuration = configMap?.let { buildConfiguration(it) }
 
-                ZingSdk.init(auth, theme, configuration)
-                Log.i(TAG, "Zing SDK initialized with auth type: $type")
+                ZingInitGuard.mutex.withLock {
+                    if (isBackground && ZingInitGuard.foregroundStarted) {
+                        Log.i(TAG, "Foreground init already active; skipping background init")
+                    } else {
+                        if (!isBackground) ZingInitGuard.foregroundStarted = true
+                        ZingSdk.init(auth, theme, configuration)
+                        Log.i(TAG, "Zing SDK initialized (background=$isBackground, auth type: $type)")
+                    }
+                }
                 result.success(null)
             }.onFailure { throwable ->
                 Log.e(TAG, "Failed to initialize Zing SDK", throwable)

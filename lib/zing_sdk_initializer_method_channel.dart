@@ -139,7 +139,12 @@ void _zingSdkBackgroundDispatcher() {
       final setup =
           PluginUtilities.getCallbackFromHandle(handle) as Future<void>
               Function()?;
-      await setup?.call();
+      try {
+        await setup?.call();
+      } finally {
+        // Signal native that init finished so the service can proceed with the sync.
+        await channel.invokeMethod('done');
+      }
     }
     return null;
   });
