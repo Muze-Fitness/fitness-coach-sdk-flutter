@@ -59,3 +59,23 @@ class ProfileSettingsRoute extends StartingRoute {
   String get routeId => 'profile_settings';
 }
 
+class BodyScanRoute extends StartingRoute {
+  const BodyScanRoute();
+
+  @override
+  String get routeId => 'body_scan';
+}
+
+class FlexibilityTestRoute extends StartingRoute {
+  const FlexibilityTestRoute();
+
+  @override
+  String get routeId => 'flexibility_test';
+}
+
+class FitnessTestRoute extends StartingRoute {
+  const FitnessTestRoute();
+
+  @override
+  String get routeId => 'fitness_test';
+}

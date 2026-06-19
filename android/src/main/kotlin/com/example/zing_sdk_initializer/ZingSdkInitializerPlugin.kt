@@ -47,6 +47,9 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             const val WORKOUT_PLAN_DETAILS = "workout_plan_details"
             const val FULL_SCHEDULE = "full_schedule"
             const val PROFILE_SETTINGS = "profile_settings"
+            const val BODY_SCAN = "body_scan"
+            const val FLEXIBILITY_TEXT = "flexibility_test"
+            const val FITNESS_TEST = "fitness_test"
         }
     }
 
@@ -227,6 +230,9 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             RouteKeys.WORKOUT_PLAN_DETAILS -> StartingRoute.WorkoutPlanDetails
             RouteKeys.FULL_SCHEDULE -> StartingRoute.FullSchedule
             RouteKeys.PROFILE_SETTINGS -> StartingRoute.ProfileSettings
+            RouteKeys.BODY_SCAN -> StartingRoute.BodyScan
+            RouteKeys.FLEXIBILITY_TEXT -> StartingRoute.FlexibilityTest
+            RouteKeys.FITNESS_TEST -> StartingRoute.FitnessTest
             else -> null
         }
 

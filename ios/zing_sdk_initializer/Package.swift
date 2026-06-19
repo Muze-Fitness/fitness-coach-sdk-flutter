@@ -10,7 +10,7 @@ let package = Package(
         .library(name: "zing-sdk-initializer", targets: ["zing_sdk_initializer"])
     ],
     dependencies: [
-        .package(url: "https://github.com/Muze-Fitness/zing-coach-sdk-ios", exact: "1.5.0")
+        .package(url: "https://github.com/Muze-Fitness/zing-coach-sdk-ios", exact: "1.6.0")
     ],
     targets: [
         .target(
