@@ -83,7 +83,7 @@ class ZingFlutterEngineManagerTest {
     }
 
     @Test
-    fun `two acquires create the engine only once`() = runTest {
+    fun `two consecutive acquires create the engine only once`() = runTest {
         val factory = FakeEngineFactory()
         val host = ZingFlutterEngineManager(factory, CoroutineScope(StandardTestDispatcher(testScheduler)))
 
@@ -94,6 +94,28 @@ class ZingFlutterEngineManagerTest {
         assertEquals(ZingFlutterEngineManager.BootState.Booted, host.state.value.bootState)
 
         val lease2 = host.acquire()  // second consumer — engine already booted
+        advanceUntilIdle()
+
+        assertEquals(2, host.state.value.refs)
+        assertEquals(ZingFlutterEngineManager.BootState.Booted, host.state.value.bootState)
+        assertEquals(1, factory.createCount) // not created a second time
+
+        // keep leases referenced so the engine is not torn down before assertions
+        assertFalse(lease1.released)
+        assertFalse(lease2.released)
+    }
+
+    @Test
+    fun `two simultaneous acquires create the engine only once`() = runTest {
+        val factory = FakeEngineFactory()
+        val host = ZingFlutterEngineManager(factory, CoroutineScope(StandardTestDispatcher(testScheduler)))
+
+        val lease1 = host.acquire()
+        advanceUntilIdle()           // boot starts and suspends in factory.create()
+        val lease2 = host.acquire()  // second consumer — engine is not created yet
+        factory.gate.complete(Unit)  // engine finishes creating
+        advanceUntilIdle()
+        assertEquals(ZingFlutterEngineManager.BootState.Booted, host.state.value.bootState)
         advanceUntilIdle()
 
         assertEquals(2, host.state.value.refs)
@@ -170,14 +192,13 @@ class ZingFlutterEngineManagerTest {
         val host = ZingFlutterEngineManager(factory, CoroutineScope(StandardTestDispatcher(testScheduler)))
 
         host.onForegroundAttached()
-        host.acquire()              // consumer present, but foreground owns the binding
+        host.acquire()
+        factory.gate.complete(Unit) // consumer present, but foreground owns the binding
         advanceUntilIdle()
         assertEquals(0, factory.createCount)
         assertEquals(ZingFlutterEngineManager.BootState.Destroyed, host.state.value.bootState)
 
         host.onForegroundDetached() // foreground engine dies → background must take over
-        advanceUntilIdle()
-        factory.gate.complete(Unit)
         advanceUntilIdle()
 
         assertEquals(1, host.state.value.refs)
