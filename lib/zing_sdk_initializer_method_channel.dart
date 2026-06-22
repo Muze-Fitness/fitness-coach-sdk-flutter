@@ -126,21 +126,25 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
 }
 
 /// Entry point executed by the native side in a headless background isolate.
-///
-/// Owned by the SDK (the consumer never references it). It looks up the
-/// consumer's registered setup function by its callback handle and runs it.
 @pragma('vm:entry-point')
 void _zingSdkBackgroundDispatcher() {
   WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+  debugPrint('[ZingBgDispatcher] entered headless isolate');
   const channel = MethodChannel('zing_sdk_initializer/background');
   channel.setMethodCallHandler((call) async {
     if (call.method == 'runSetup') {
+      debugPrint('[ZingBgDispatcher] runSetup received');
       final handle = CallbackHandle.fromRawHandle(call.arguments as int);
       final setup =
           PluginUtilities.getCallbackFromHandle(handle) as Future<void>
               Function()?;
       try {
         await setup?.call();
+        debugPrint('[ZingBgDispatcher] setup completed');
+      } catch (e, st) {
+        debugPrint('[ZingBgDispatcher] setup failed: $e\n$st');
+        rethrow;
       } finally {
         // Signal native that init finished so the service can proceed with the sync.
         await channel.invokeMethod('done');
@@ -149,5 +153,6 @@ void _zingSdkBackgroundDispatcher() {
     return null;
   });
   // Signal native that the isolate is ready to receive `runSetup`.
+  debugPrint('[ZingBgDispatcher] sending ready');
   channel.invokeMethod('ready');
 }

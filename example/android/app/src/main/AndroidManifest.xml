@@ -27,13 +27,6 @@
         </provider>
 
         <activity
-            android:name=".coach.ZingSdkActivity"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize"/>
-
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
@@ -55,9 +48,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Health Connect background sync service (provided by the plugin). -->
+        <!-- Health Connect background sync service. -->
         <service
-            android:name="com.example.zing_sdk_initializer.ZingHealthConnectForegroundService"
+            android:name="coach.zing.fitness.coach.service.ZingSdkHCForegroundService"
             android:exported="false"
             android:foregroundServiceType="health">
             <intent-filter>
