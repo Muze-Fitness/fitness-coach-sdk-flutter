@@ -104,4 +104,86 @@ class ZingFlutterEngineManagerTest {
         assertFalse(lease1.released)
         assertFalse(lease2.released)
     }
+
+    @Test
+    fun `foreground start creates no background regardless of refs`() = runTest {
+        val factory = FakeEngineFactory()
+        val host = ZingFlutterEngineManager(factory, CoroutineScope(StandardTestDispatcher(testScheduler)))
+
+        // refs == 0
+        host.onForegroundAttached()
+        advanceUntilIdle()
+        assertEquals(0, host.state.value.refs)
+        assertTrue(host.state.value.foregroundAlive)
+        assertEquals(ZingFlutterEngineManager.BootState.Destroyed, host.state.value.bootState)
+        assertEquals(0, factory.createCount)
+
+        // refs == 1 (acquire while foreground is alive)
+        host.acquire()
+        advanceUntilIdle()
+        assertEquals(1, host.state.value.refs)
+        assertEquals(ZingFlutterEngineManager.BootState.Destroyed, host.state.value.bootState)
+        assertEquals(0, factory.createCount) // foreground owns the binding — no background booted
+    }
+
+    @Test
+    fun `foreground start destroys an already booted background`() = runTest {
+        val factory = FakeEngineFactory()
+        val host = ZingFlutterEngineManager(factory, CoroutineScope(StandardTestDispatcher(testScheduler)))
+
+        host.acquire()
+        advanceUntilIdle()
+        factory.gate.complete(Unit)
+        advanceUntilIdle()
+        assertEquals(ZingFlutterEngineManager.BootState.Booted, host.state.value.bootState)
+
+        host.onForegroundAttached() // foreground takes over while a consumer (refs=1) is still here
+        advanceUntilIdle()
+
+        assertTrue(host.state.value.foregroundAlive)
+        assertEquals(ZingFlutterEngineManager.BootState.Destroyed, host.state.value.bootState)
+        assertTrue(factory.created!!.destroyed) // background torn down despite refs > 0
+    }
+
+    @Test
+    fun `foreground start destroys a background that is still booting`() = runTest {
+        val factory = FakeEngineFactory()
+        val host = ZingFlutterEngineManager(factory, CoroutineScope(StandardTestDispatcher(testScheduler)))
+
+        host.acquire()
+        advanceUntilIdle()          // boot suspended inside factory.create()
+        assertEquals(ZingFlutterEngineManager.BootState.InProgress, host.state.value.bootState)
+
+        host.onForegroundAttached() // foreground arrives mid-boot
+        factory.gate.complete(Unit) // engine finishes creating
+        advanceUntilIdle()
+
+        assertEquals(ZingFlutterEngineManager.BootState.Destroyed, host.state.value.bootState)
+        assertEquals(1, factory.createCount)
+        assertTrue(factory.created!!.destroyed) // torn down on completion
+        assertFalse(factory.created!!.started)  // Dart setup never ran
+    }
+
+    @Test
+    fun `foreground detach boots background when a consumer is waiting`() = runTest {
+        val factory = FakeEngineFactory()
+        val host = ZingFlutterEngineManager(factory, CoroutineScope(StandardTestDispatcher(testScheduler)))
+
+        host.onForegroundAttached()
+        host.acquire()              // consumer present, but foreground owns the binding
+        advanceUntilIdle()
+        assertEquals(0, factory.createCount)
+        assertEquals(ZingFlutterEngineManager.BootState.Destroyed, host.state.value.bootState)
+
+        host.onForegroundDetached() // foreground engine dies → background must take over
+        advanceUntilIdle()
+        factory.gate.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(1, host.state.value.refs)
+        assertEquals(ZingFlutterEngineManager.BootState.Booted, host.state.value.bootState)
+        assertEquals(1, factory.createCount)
+        assertTrue(factory.created!!.started)
+    }
 }
+
