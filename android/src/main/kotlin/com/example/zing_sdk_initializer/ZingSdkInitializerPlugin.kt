@@ -12,6 +12,7 @@ import coach.zing.fitness.coach.StartingRoute
 import coach.zing.fitness.coach.ZingSdk
 import coach.zing.fitness.coach.ZingSdkActivity
 import coach.zing.fitness.coach.ZingSdkTheme
+import com.example.zing_sdk_initializer.engine.ZingBackgroundPrefs
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -75,7 +76,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        if (!isBackground) ZingFlutterHost.onForegroundDetached()
+        if (!isBackground) ZingFlutterEngineManager.instance?.onForegroundDetached()
         channel.setMethodCallHandler(null)
         authStateEventChannel.setStreamHandler(null)
         scope.cancel()
@@ -119,14 +120,14 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 val configuration = configMap?.let { buildConfiguration(it) }
 
                 if (isBackground) {
-                    if (ZingFlutterHost.state.value.foregroundAlive) {
+                    if (ZingFlutterEngineManager.instance?.state?.value?.foregroundAlive == true) {
                         Log.i(TAG, "Foreground active; skipping background init")
                     } else {
                         ZingSdk.init(auth, theme, configuration)
                         Log.i(TAG, "Zing SDK initialized (background, auth type: $type)")
                     }
                 } else {
-                    ZingFlutterHost.onForegroundAttached()
+                    ZingFlutterEngineManager.instance?.onForegroundAttached()
                     ZingSdk.init(auth, theme, configuration)
                     Log.i(TAG, "Zing SDK initialized (foreground, auth type: $type)")
                 }

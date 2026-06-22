@@ -1,4 +1,4 @@
-package com.example.zing_sdk_initializer
+package com.example.zing_sdk_initializer.engine
 
 internal object ZingBackgroundPrefs {
     const val NAME = "zing_sdk_background_prefs"

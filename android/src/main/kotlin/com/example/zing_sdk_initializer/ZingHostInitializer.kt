@@ -3,6 +3,7 @@ package com.example.zing_sdk_initializer
 import android.content.Context
 import androidx.startup.Initializer
 import coach.zing.fitness.coach.ZingSdkInitializerRegistry
+import com.example.zing_sdk_initializer.engine.RealFlutterEngineFactory
 
 /**
  * Registers the Flutter implementation of the native [coach.zing.fitness.coach.ZingSdkInitializer]
@@ -11,8 +12,9 @@ import coach.zing.fitness.coach.ZingSdkInitializerRegistry
  */
 class ZingHostInitializer : Initializer<Unit> {
     override fun create(context: Context) {
-        ZingFlutterHost.install(context.applicationContext)
-        ZingSdkInitializerRegistry.instance = ZingFlutterInitializerImpl()
+        val host = ZingFlutterEngineManager(RealFlutterEngineFactory(context.applicationContext))
+        ZingFlutterEngineManager.instance = host
+        ZingSdkInitializerRegistry.instance = ZingFlutterSdkInitializer(host)
     }
 
     override fun dependencies(): List<Class<out Initializer<*>>> = emptyList()
