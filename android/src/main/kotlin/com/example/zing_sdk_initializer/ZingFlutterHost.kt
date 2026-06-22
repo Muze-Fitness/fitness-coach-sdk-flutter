@@ -133,15 +133,22 @@ internal object ZingFlutterHost {
             }
         }
 
-        flutterEngine.dartExecutor.executeDartCallback(
-            DartExecutor.DartCallback(context.assets, loader.findAppBundlePath(), callbackInfo)
-        )
-        Log.i(TAG, "boot: headless engine started, dispatcher entrypoint executing")
-
         synchronized(lock) {
-            engine = flutterEngine
             booting = false
-            reconcile() // foreground may have returned / refs may have hit 0 while booting
+            // A release()/foreground-takeover during boot can't schedule a destroy (engine was still
+            // null). Re-check here: if the engine is no longer needed, tear down the freshly built one
+            // instead of running its Dart setup needlessly.
+            if (refs == 0 || foregroundAlive) {
+                Log.i(TAG, "boot: no longer needed (refs=$refs, foregroundAlive=$foregroundAlive); destroying")
+                flutterEngine.destroy()
+                engine = null
+                return
+            }
+            engine = flutterEngine
+            flutterEngine.dartExecutor.executeDartCallback(
+                DartExecutor.DartCallback(context.assets, loader.findAppBundlePath(), callbackInfo)
+            )
+            Log.i(TAG, "boot: headless engine started, dispatcher entrypoint executing")
         }
     }
 
