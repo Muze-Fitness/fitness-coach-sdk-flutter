@@ -119,7 +119,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 val configuration = configMap?.let { buildConfiguration(it) }
 
                 if (isBackground) {
-                    if (ZingFlutterHost.foregroundAlive) {
+                    if (ZingFlutterHost.state.value.foregroundAlive) {
                         Log.i(TAG, "Foreground active; skipping background init")
                     } else {
                         ZingSdk.init(auth, theme, configuration)

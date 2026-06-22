@@ -10,6 +10,9 @@ import io.flutter.view.FlutterCallbackInformation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -19,11 +22,6 @@ import kotlinx.coroutines.launch
  */
 internal object ZingFlutterHost {
 
-    class Lease {
-        @Volatile
-        var released = false
-    }
-
     private val lock = Any()
     private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -31,15 +29,18 @@ internal object ZingFlutterHost {
     private var engine: FlutterEngine? = null
     private var refs = 0
     private var booting = false
+    private var foregroundAlive = false
 
-    @Volatile
-    var foregroundAlive = false
+    private val _state = MutableStateFlow(
+        State(refs = 0, bootState = BootState.Destroyed, foregroundAlive = false)
+    )
+
+    val state: StateFlow<State> = _state.asStateFlow()
 
     fun install(context: Context) {
         appContext = context.applicationContext
     }
 
-    /** A Lease does not freeze the headless decision — it is dynamic (see [reconcile]). */
     fun acquire(): Lease = synchronized(lock) {
         refs++
         Log.d(TAG, "acquire: refs=$refs, foregroundAlive=$foregroundAlive, engine=${engine != null}")
@@ -81,13 +82,24 @@ internal object ZingFlutterHost {
             !needHeadless && engine != null && !booting ->
                 mainScope.launch { destroyEngine() }
         }
+        publishState()
     }
 
-    // --- internals (Main thread) ---
+    private fun publishState() {
+        val bootState = when {
+            booting -> BootState.InProgress
+            engine != null -> BootState.Booted
+            else -> BootState.Destroyed
+        }
+        _state.value = State(refs = refs, bootState = bootState, foregroundAlive = foregroundAlive)
+    }
 
     private fun boot() {
         val context = appContext ?: run {
-            synchronized(lock) { booting = false }
+            synchronized(lock) {
+                booting = false
+                publishState()
+            }
             return
         }
         val prefs = context.getSharedPreferences(ZingBackgroundPrefs.NAME, Context.MODE_PRIVATE)
@@ -97,7 +109,10 @@ internal object ZingFlutterHost {
             // registerBackgroundSetup was never called — init won't happen, awaitSdkAuthentication
             // will hit the withTimeout on the SDK side.
             Log.w(TAG, "boot: no background handles (registerBackgroundSetup not called?); aborting")
-            synchronized(lock) { booting = false }
+            synchronized(lock) {
+                booting = false
+                publishState()
+            }
             return
         }
 
@@ -110,7 +125,10 @@ internal object ZingFlutterHost {
         val callbackInfo = FlutterCallbackInformation.lookupCallbackInformation(dispatcherHandle)
         if (callbackInfo == null) {
             Log.w(TAG, "boot: callback info not found for dispatcher=$dispatcherHandle; aborting")
-            synchronized(lock) { booting = false }
+            synchronized(lock) {
+                booting = false
+                publishState()
+            }
             return
         }
 
@@ -142,6 +160,7 @@ internal object ZingFlutterHost {
                 Log.i(TAG, "boot: no longer needed (refs=$refs, foregroundAlive=$foregroundAlive); destroying")
                 flutterEngine.destroy()
                 engine = null
+                publishState()
                 return
             }
             engine = flutterEngine
@@ -149,6 +168,7 @@ internal object ZingFlutterHost {
                 DartExecutor.DartCallback(context.assets, loader.findAppBundlePath(), callbackInfo)
             )
             Log.i(TAG, "boot: headless engine started, dispatcher entrypoint executing")
+            publishState()
         }
     }
 
@@ -157,6 +177,20 @@ internal object ZingFlutterHost {
         Log.i(TAG, "destroyEngine: destroying headless FlutterEngine")
         engine?.destroy()
         engine = null
+        publishState()
+    }
+
+    enum class BootState { InProgress, Booted, Destroyed }
+
+    data class State(
+        val refs: Int,
+        val bootState: BootState,
+        val foregroundAlive: Boolean,
+    )
+
+    class Lease {
+        @Volatile
+        var released = false
     }
 
     private const val BACKGROUND_CHANNEL = "zing_sdk_initializer/background"
