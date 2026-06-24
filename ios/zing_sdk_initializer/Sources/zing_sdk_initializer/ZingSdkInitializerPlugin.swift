@@ -118,14 +118,16 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
                 let coachesRaw = configDict["coachesAvailability"] as? String,
                 let coaches = CoachesAvailability(rawValue: coachesRaw),
                 let genderRaw = configDict["genderAvailability"] as? String,
-                let gender = GenderAvailability(rawValue: genderRaw)
+                let gender = GenderAvailability(rawValue: genderRaw),
+                let backgroundDeliveryEnabled = configDict["healthBackgroundSync"] as? Bool
             else {
                 completion(PluginError.nativeInitFailed.toFlutter())
                 return
             }
             configuration = ZingSDK.Configuration(
                 coachesAvailability: coaches,
-                genderAvailability: gender
+                genderAvailability: gender,
+                ahBackgroundDeliveryEnabled: backgroundDeliveryEnabled
             )
         } else {
             configuration = ZingSDK.Configuration()
