@@ -37,6 +37,11 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
     throw UnimplementedError('init() has not been implemented.');
   }
 
+  Future<void> registerBackgroundSetup(Future<void> Function() setup) {
+    throw UnimplementedError(
+        'registerBackgroundSetup() has not been implemented.');
+  }
+
   Future<void> login() {
     throw UnimplementedError('login() has not been implemented.');
   }

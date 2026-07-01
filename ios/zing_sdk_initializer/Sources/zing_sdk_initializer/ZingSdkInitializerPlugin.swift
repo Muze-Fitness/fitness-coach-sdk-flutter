@@ -118,14 +118,16 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
                 let coachesRaw = configDict["coachesAvailability"] as? String,
                 let coaches = CoachesAvailability(rawValue: coachesRaw),
                 let genderRaw = configDict["genderAvailability"] as? String,
-                let gender = GenderAvailability(rawValue: genderRaw)
+                let gender = GenderAvailability(rawValue: genderRaw),
+                let backgroundDeliveryEnabled = configDict["healthBackgroundSync"] as? Bool
             else {
                 completion(PluginError.nativeInitFailed.toFlutter())
                 return
             }
             configuration = ZingSDK.Configuration(
                 coachesAvailability: coaches,
-                genderAvailability: gender
+                genderAvailability: gender,
+                ahBackgroundDeliveryEnabled: backgroundDeliveryEnabled
             )
         } else {
             configuration = ZingSDK.Configuration()
@@ -198,32 +200,37 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             return
         }
         Task { @MainActor in
-            let viewController = makeViewController(for: route, sdk: sdk)
-            presentViewController(viewController, completion: completion)
+            let result = makeViewController(for: route, sdk: sdk)
+            switch result {
+            case .success(let success):
+                presentViewController(success, completion: completion)
+            case .failure(let failure):
+                completion(failure.toFlutter())
+            }
         }
     }
 
     @MainActor
-    private func makeViewController(for route: Route, sdk: ZingSDK) -> UIViewController {
+    private func makeViewController(for route: Route, sdk: ZingSDK) -> Result<UIViewController, ZingSDK.ScreenPresentationError> {
         switch route {
         case .customWorkout:
-            sdk.makeCustomWorkoutModule()
+            sdk.makeScreen(.customWorkout)
         case .aiAssistant:
-            sdk.makeAssistantChat()
+            sdk.makeScreen(.assistantChat)
         case .workoutPlanDetails:
-            sdk.makeFullSchedule()
+            sdk.makeScreen(.fullSchedule)
         case .fullSchedule:
-            sdk.makeFullSchedule()
+            sdk.makeScreen(.fullSchedule)
         case .home:
-            sdk.makeProgramModule()
+            sdk.makeScreen(.program)
         case .profileSettings:
-            sdk.makeProfileSettings()
+            sdk.makeScreen(.profileSettings)
         case .bodyScan:
-            sdk.makeBodyScan()
+            sdk.makeScreen(.bodyScan(useFrontCamera: true))
         case .flexibilityTest:
-            sdk.makeFlexibilityTest(useFrontCamera: true)
+            sdk.makeScreen(.flexibilityTest(useFrontCamera: true))
         case .fitnessTest:
-            sdk.makeFitnessTest(useFrontCamera: true)
+            sdk.makeScreen(.fitnessTest(useFrontCamera: true))
         }
     }
 

@@ -21,13 +21,23 @@ class SdkConfiguration {
   const SdkConfiguration({
     this.coachesAvailability = CoachesAvailability.allCoaches,
     this.genderAvailability = GenderAvailability.all,
+    this.healthBackgroundSync = false,
   });
 
   final CoachesAvailability coachesAvailability;
   final GenderAvailability genderAvailability;
 
+  /// Enables background sync of health data (Health Connect on Android,
+  /// HealthKit background delivery on iOS).
+  ///
+  /// On Android this additionally requires registering a background setup
+  /// handler via [ZingSdk.registerBackgroundSetup] and declaring the background
+  /// sync service in the host app manifest.
+  final bool healthBackgroundSync;
+
   Map<String, dynamic> toMap() => {
         'coachesAvailability': coachesAvailability.name,
         'genderAvailability': genderAvailability.name,
+        'healthBackgroundSync': healthBackgroundSync,
       };
 }

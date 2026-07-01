@@ -36,6 +36,15 @@ extension LogoutError: FlutterCodableError {
     }
 }
 
+extension ZingSDK.ScreenPresentationError: FlutterCodableError {
+    var flutterCode: String {
+        switch self {
+        case .notLoggedIn:
+            "not_logged_in"
+        }
+    }
+}
+
 extension Error {
     func toFlutter() -> FlutterError {
         FlutterError(

@@ -1,5 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
@@ -59,6 +62,27 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   }
 
   @override
+  Future<void> registerBackgroundSetup(Future<void> Function() setup) async {
+    // Background sync is Android-only; no-op on other platforms so consumers
+    // can call this unconditionally without platform checks.
+    if (defaultTargetPlatform != TargetPlatform.android) return;
+
+    final dispatcher =
+        PluginUtilities.getCallbackHandle(_zingSdkBackgroundDispatcher);
+    final userSetup = PluginUtilities.getCallbackHandle(setup);
+    if (dispatcher == null || userSetup == null) {
+      throw ArgumentError(
+        'registerBackgroundSetup requires a top-level or static function '
+        "annotated with @pragma('vm:entry-point').",
+      );
+    }
+    await methodChannel.invokeMethod<void>('registerBackgroundSetup', {
+      'dispatcher': dispatcher.toRawHandle(),
+      'setup': userSetup.toRawHandle(),
+    });
+  }
+
+  @override
   Future<void> login() {
     return methodChannel.invokeMethod<void>('login');
   }
@@ -99,4 +123,36 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
       }
     });
   }
+}
+
+/// Entry point executed by the native side in a headless background isolate.
+@pragma('vm:entry-point')
+void _zingSdkBackgroundDispatcher() {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+  debugPrint('[ZingBgDispatcher] entered headless isolate');
+  const channel = MethodChannel('zing_sdk_initializer/background');
+  channel.setMethodCallHandler((call) async {
+    if (call.method == 'runSetup') {
+      debugPrint('[ZingBgDispatcher] runSetup received');
+      final handle = CallbackHandle.fromRawHandle(call.arguments as int);
+      final setup =
+          PluginUtilities.getCallbackFromHandle(handle) as Future<void>
+              Function()?;
+      try {
+        await setup?.call();
+        debugPrint('[ZingBgDispatcher] setup completed');
+      } catch (e, st) {
+        debugPrint('[ZingBgDispatcher] setup failed: $e\n$st');
+        rethrow;
+      } finally {
+        // Signal native that init finished so the service can proceed with the sync.
+        await channel.invokeMethod('done');
+      }
+    }
+    return null;
+  });
+  // Signal native that the isolate is ready to receive `runSetup`.
+  debugPrint('[ZingBgDispatcher] sending ready');
+  channel.invokeMethod('ready');
 }
