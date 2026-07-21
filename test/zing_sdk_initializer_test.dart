@@ -45,6 +45,9 @@ class _MockZingSdkInitializerPlatform
   }
 
   @override
+  Future<void> registerBackgroundSetup(Future<void> Function() setup) async {}
+
+  @override
   Stream<SdkAuthState> get authStateStream => _authStateController.stream;
 
   void emitAuthState(SdkAuthState state) => _authStateController.add(state);
