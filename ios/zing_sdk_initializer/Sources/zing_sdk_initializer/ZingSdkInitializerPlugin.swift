@@ -19,6 +19,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         static let login = "login"
         static let logout = "logout"
         static let openScreen = "openScreen"
+        static let setProfileParams = "setProfileParams"
     }
 
     private enum Route: String {
@@ -74,6 +75,8 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             handleLogout(result)
         case Method.openScreen:
             handleOpenScreen(method: call, result)
+        case Method.setProfileParams:
+            handleSetProfileParams(method: call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -208,6 +211,24 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
                 completion(failure.toFlutter())
             }
         }
+    }
+
+    private func handleSetProfileParams(method: FlutterMethodCall, _ completion: @escaping FlutterResult) {
+        guard let sdk else {
+            completion(PluginError.notInitialized.toFlutter())
+            return
+        }
+        let args = method.arguments as? [String: Any] ?? [:]
+        let parameters = ProfileParameters(
+            name: args["name"] as? String,
+            gender: (args["gender"] as? String).flatMap(ProfileParameters.UserGender.init(rawValue:)),
+            height: args["height"] as? Double,
+            weight: args["weight"] as? Double,
+            age: args["age"] as? Int,
+            measurementSystem: (args["measurementSystem"] as? String).flatMap(ProfileParameters.Unit.init(rawValue:))
+        )
+        sdk.setProfileParams(parameters)
+        completion(nil)
     }
 
     @MainActor

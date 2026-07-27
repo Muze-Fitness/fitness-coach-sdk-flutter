@@ -120,6 +120,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _setProfileParams() async {
+    setState(() => _error = null);
+    try {
+      await _sdk.setProfileParams(
+        const ProfileParams(
+          name: 'Username',
+          gender: UserGender.male,
+          height: 178.9,
+          weight: 67.8,
+          age: 23,
+          measurementSystem: MeasurementSystem.metric,
+        ),
+      );
+    } on PlatformException catch (e) {
+      setState(() => _error = '${e.code}: ${e.message}');
+    }
+  }
+
   Future<void> _openScreen(StartingRoute route) async {
     setState(() => _error = null);
     try {
@@ -151,6 +169,16 @@ class _HomePageState extends State<HomePage> {
                     _ => 'Login',
                   },
                 ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: FilledButton.tonal(
+                onPressed: _authState is SdkAuthStateAuthenticated
+                    ? _setProfileParams
+                    : null,
+                child: const Text('Set Profile Params'),
               ),
             ),
             const SizedBox(height: 8),

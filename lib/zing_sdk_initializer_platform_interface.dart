@@ -1,5 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
@@ -52,6 +53,10 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
 
   Future<void> openScreen(StartingRoute route) {
     throw UnimplementedError('openScreen() has not been implemented.');
+  }
+
+  Future<void> setProfileParams(ProfileParams params) {
+    throw UnimplementedError('setProfileParams() has not been implemented.');
   }
 
   Stream<SdkAuthState> get authStateStream {

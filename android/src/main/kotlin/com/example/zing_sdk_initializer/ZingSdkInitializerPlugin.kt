@@ -7,8 +7,11 @@ import androidx.core.content.res.ResourcesCompat
 import coach.zing.fitness.coach.CoachesAvailability
 import coach.zing.fitness.coach.Configuration
 import coach.zing.fitness.coach.GenderAvailability
+import coach.zing.fitness.coach.MeasurementUnit
+import coach.zing.fitness.coach.ProfileParams
 import coach.zing.fitness.coach.SdkAuthentication
 import coach.zing.fitness.coach.StartingRoute
+import coach.zing.fitness.coach.UserGender
 import coach.zing.fitness.coach.ZingSdk
 import coach.zing.fitness.coach.ZingSdkActivity
 import coach.zing.fitness.coach.ZingSdkTheme
@@ -38,6 +41,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private const val METHOD_LOGOUT = "logout"
         private const val METHOD_OPEN_SCREEN = "openScreen"
         private const val METHOD_REGISTER_BACKGROUND_SETUP = "registerBackgroundSetup"
+        private const val METHOD_SET_PROFILE_PARAMS = "setProfileParams"
         private const val ARG_ROUTE = "route"
 
         private object RouteKeys {
@@ -89,6 +93,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             METHOD_LOGOUT -> handleLogout(result)
             METHOD_OPEN_SCREEN -> handleOpenScreen(call, result)
             METHOD_REGISTER_BACKGROUND_SETUP -> handleRegisterBackgroundSetup(call, result)
+            METHOD_SET_PROFILE_PARAMS -> handleSetProfileParams(call, result)
             else -> result.notImplemented()
         }
     }
@@ -169,6 +174,40 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 Log.e(TAG, "Failed to logout Zing SDK", throwable)
                 result.error(
                     "logout_failed",
+                    throwable.message,
+                    Log.getStackTraceString(throwable)
+                )
+            }
+        }
+    }
+
+    private fun handleSetProfileParams(call: MethodCall, result: MethodChannel.Result) {
+        scope.launch {
+            runCatching {
+                val profileParams = ProfileParams(
+                    name = call.argument<String>("name"),
+                    gender = when (call.argument<String>("gender")) {
+                        "male" -> UserGender.MALE
+                        "female" -> UserGender.FEMALE
+                        "other" -> UserGender.OTHER
+                        else -> null
+                    },
+                    height = call.argument<Double>("height")?.toFloat(),
+                    weight = call.argument<Double>("weight")?.toFloat(),
+                    age = call.argument<Int>("age"),
+                    measurementSystem = when (call.argument<String>("measurementSystem")) {
+                        "metric" -> MeasurementUnit.METRIC
+                        "imperial" -> MeasurementUnit.IMPERIAL
+                        else -> null
+                    },
+                )
+                ZingSdk.setProfileParams(profileParams)
+                Log.i(TAG, "Zing SDK profile params set")
+                result.success(null)
+            }.onFailure { throwable ->
+                Log.e(TAG, "Failed to set Zing SDK profile params", throwable)
+                result.error(
+                    "set_profile_params_failed",
                     throwable.message,
                     Log.getStackTraceString(throwable)
                 )

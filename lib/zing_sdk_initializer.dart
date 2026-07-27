@@ -1,3 +1,4 @@
+import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
@@ -5,6 +6,7 @@ import 'sdk_theme.dart';
 import 'starting_route.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
 
+export 'profile_params.dart';
 export 'sdk_auth_state.dart';
 export 'sdk_authentication.dart';
 export 'sdk_configuration.dart';
@@ -55,6 +57,11 @@ class ZingSdk {
   /// Opens one of the predefined SDK screens.
   Future<void> openScreen(StartingRoute route) {
     return ZingSdkInitializerPlatform.instance.openScreen(route);
+  }
+
+  /// Set profile paramethers to the native SDK.
+  Future<void> setProfileParams(ProfileParams params) {
+    return ZingSdkInitializerPlatform.instance.setProfileParams(params);
   }
 
   /// Stream of authentication state changes from the native SDK.

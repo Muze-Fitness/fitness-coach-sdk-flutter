@@ -166,6 +166,31 @@ void main() {
     );
   });
 
+  test('setProfileParams sends full payload', () async {
+    await platform.setProfileParams(
+      const ProfileParams(
+        name: 'Username',
+        gender: UserGender.male,
+        height: 178.9,
+        weight: 67.8,
+        age: 23,
+        measurementSystem: MeasurementSystem.metric,
+      ),
+    );
+
+    expect(capturedCall?.method, 'setProfileParams');
+    expect(
+      capturedCall?.arguments,
+      equals({
+        'name': 'Username',
+        'gender': 'male',
+        'height': 178.9,
+        'weight': 67.8,
+        'age': 23,
+        'measurementSystem': 'metric',
+      }),
+    );
+  });
 }
 
 class _StubCallback implements AuthTokenCallback {
