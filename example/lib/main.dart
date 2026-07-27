@@ -28,7 +28,7 @@ Future<void> zingSdkSetup() async {
         brandSecondary: Color(0xFF980052),
       ),
       cornersRounding: SdkCornerRounding(
-        buttonBorder: SdkRadius.value(0),
+        button: SdkRadius.value(0),
       ),
     ),
   );

@@ -97,6 +97,7 @@ void main() {
         'configuration': {
           'coachesAvailability': 'userGenderBased',
           'genderAvailability': 'binary',
+          'healthBackgroundSync': false,
         },
       }),
     );
@@ -114,8 +115,10 @@ void main() {
       theme: const SdkTheme(
         colors: SdkColors(
           brandPrimary: Color(0xFFFF0000),
+          bgPrimary: Color(0xA0000000),
+          bgSecondary: Color(0x80123456),
         ),
-        cornersRounding: SdkCornerRounding(buttonBorder: SdkRadius.value(16.0)),
+        cornersRounding: SdkCornerRounding(button: SdkRadius.value(16.0)),
       ),
     );
 
@@ -128,11 +131,11 @@ void main() {
         'theme': {
           'colors': {
             'brand/primary': 0xFFFF0000,
-            'overlay/black-dark': 0xA0000000,
-            'bg/light-grey': 0x80123456,
+            'bg/primary': 0xA0000000,
+            'bg/secondary': 0x80123456,
           },
           'cornersRounding': {
-            'button/border': {'type': 'value', 'value': 16.0},
+            'radius/button': {'type': 'value', 'value': 16.0},
           },
         },
       }),
