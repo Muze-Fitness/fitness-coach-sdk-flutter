@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
@@ -95,6 +96,11 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   @override
   Future<void> openScreen(StartingRoute route) {
     return methodChannel.invokeMethod<void>('openScreen', route.toMap());
+  }
+
+  @override
+  Future<void> setProfileParams(ProfileParams params) {
+    return methodChannel.invokeMethod<void>('setProfileParams', params.toMap());
   }
 
   Stream<SdkAuthState>? _authStateStream;

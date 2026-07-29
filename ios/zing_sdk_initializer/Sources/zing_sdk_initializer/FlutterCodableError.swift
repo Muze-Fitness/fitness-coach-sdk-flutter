@@ -45,6 +45,12 @@ extension ZingSDK.ScreenPresentationError: FlutterCodableError {
     }
 }
 
+extension ZingSDK.ProfileUpdateError: FlutterCodableError {
+    var flutterCode: String {
+        "set_profile_params_failed"
+    }
+}
+
 extension Error {
     func toFlutter() -> FlutterError {
         FlutterError(

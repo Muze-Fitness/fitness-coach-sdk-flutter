@@ -342,7 +342,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     @Suppress("UNCHECKED_CAST")
     private fun buildCornerRadius(themeMap: Map<String, Any>): ZingSdkTheme.CornerRadius? {
         val cornerMap = themeMap["cornersRounding"] as? Map<String, Any> ?: return null
-        val buttonMap = cornerMap["button/border"] as? Map<String, Any> ?: return null
+        val buttonMap = cornerMap["radius/button"] as? Map<String, Any> ?: return null
         val sdkRadius = when (buttonMap["type"] as? String) {
             "pill" -> ZingSdkTheme.CornerRadius.SdkRadius.Pill
             "value" -> {

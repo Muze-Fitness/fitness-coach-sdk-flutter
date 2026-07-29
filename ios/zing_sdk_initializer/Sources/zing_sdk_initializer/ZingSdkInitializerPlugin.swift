@@ -19,6 +19,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         static let login = "login"
         static let logout = "logout"
         static let openScreen = "openScreen"
+        static let setProfileParams = "setProfileParams"
     }
 
     private enum Route: String {
@@ -74,6 +75,8 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             handleLogout(result)
         case Method.openScreen:
             handleOpenScreen(method: call, result)
+        case Method.setProfileParams:
+            handleSetProfileParams(method: call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -141,13 +144,12 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         )
 
         Task { @MainActor in
-            let result = await ZingSDK.initialize(with: parameters)
-            switch result {
-            case .success(let sdkInstance):
+            do {
+                let sdkInstance = try await ZingSDK.initialize(with: parameters)
                 self.sdk = sdkInstance
                 self.authStateChannel?.setStreamHandler(AuthStateStreamHandler(sdk: sdkInstance))
                 completion(nil)
-            case .failure:
+            } catch {
                 completion(PluginError.nativeInitFailed.toFlutter())
             }
         }
@@ -159,10 +161,10 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             return
         }
         Task { @MainActor in
-            switch await sdk.login() {
-            case .success:
+            do {
+                try await sdk.login()
                 completion(nil)
-            case .failure(let error):
+            } catch {
                 completion(error.toFlutter())
             }
         }
@@ -174,10 +176,10 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             return
         }
         Task { @MainActor in
-            switch await sdk.logout() {
-            case .success:
+            do {
+                try await sdk.logout()
                 completion(nil)
-            case .failure(let error):
+            } catch {
                 completion(error.toFlutter())
             }
         }
@@ -200,37 +202,61 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             return
         }
         Task { @MainActor in
-            let result = makeViewController(for: route, sdk: sdk)
-            switch result {
-            case .success(let success):
-                presentViewController(success, completion: completion)
-            case .failure(let failure):
-                completion(failure.toFlutter())
+            do {
+                let viewController = try makeViewController(for: route, sdk: sdk)
+                presentViewController(viewController, completion: completion)
+            } catch {
+                completion(error.toFlutter())
             }
         }
     }
 
+    private func handleSetProfileParams(method: FlutterMethodCall, _ completion: @escaping FlutterResult) {
+        guard let sdk else {
+            completion(PluginError.notInitialized.toFlutter())
+            return
+        }
+        let args = method.arguments as? [String: Any] ?? [:]
+        let parameters = ProfileParameters(
+            name: args["name"] as? String,
+            gender: (args["gender"] as? String).flatMap(ProfileParameters.UserGender.init(rawValue:)),
+            height: args["height"] as? Double,
+            weight: args["weight"] as? Double,
+            age: args["age"] as? Int,
+            measurementSystem: (args["measurementSystem"] as? String).flatMap(ProfileParameters.Unit.init(rawValue:))
+        )
+        do {
+            try sdk.setProfileParams(parameters)
+            completion(nil)
+        } catch {
+            completion(error.toFlutter())
+        }
+    }
+
     @MainActor
-    private func makeViewController(for route: Route, sdk: ZingSDK) -> Result<UIViewController, ZingSDK.ScreenPresentationError> {
+    private func makeViewController(
+        for route: Route,
+        sdk: ZingSDK
+    ) throws(ZingSDK.ScreenPresentationError) -> UIViewController {
         switch route {
         case .customWorkout:
-            sdk.makeScreen(.customWorkout)
+            try sdk.makeScreen(.customWorkout)
         case .aiAssistant:
-            sdk.makeScreen(.assistantChat)
+            try sdk.makeScreen(.assistantChat)
         case .workoutPlanDetails:
-            sdk.makeScreen(.fullSchedule)
+            try sdk.makeScreen(.fullSchedule)
         case .fullSchedule:
-            sdk.makeScreen(.fullSchedule)
+            try sdk.makeScreen(.fullSchedule)
         case .home:
-            sdk.makeScreen(.program)
+            try sdk.makeScreen(.program)
         case .profileSettings:
-            sdk.makeScreen(.profileSettings)
+            try sdk.makeScreen(.profileSettings)
         case .bodyScan:
-            sdk.makeScreen(.bodyScan(useFrontCamera: true))
+            try sdk.makeScreen(.bodyScan(useFrontCamera: true))
         case .flexibilityTest:
-            sdk.makeScreen(.flexibilityTest(useFrontCamera: true))
+            try sdk.makeScreen(.flexibilityTest(useFrontCamera: true))
         case .fitnessTest:
-            sdk.makeScreen(.fitnessTest(useFrontCamera: true))
+            try sdk.makeScreen(.fitnessTest(useFrontCamera: true))
         }
     }
 

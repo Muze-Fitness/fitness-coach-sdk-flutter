@@ -100,13 +100,39 @@ class SdkTypography {
 /// Corner-radius overrides. Each field is optional; unset fields keep
 /// the SDK default.
 class SdkCornerRounding {
-  const SdkCornerRounding({this.buttonBorder});
+  const SdkCornerRounding({
+    this.button,
+    this.input,
+    this.hero,
+    this.modal,
+    this.cardSm,
+    this.cardMd,
+    this.cardLg,
+  });
 
-  final SdkRadius? buttonBorder;
+  final SdkRadius? button;
+  final SdkRadius? input;
+  final SdkRadius? hero;
+  final SdkRadius? modal;
+  final SdkRadius? cardSm;
+  final SdkRadius? cardMd;
+  final SdkRadius? cardLg;
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
-    if (buttonBorder != null) map['button/border'] = buttonBorder!.toMap();
+
+    void put(String key, SdkRadius? radius) {
+      if (radius != null) map[key] = radius.toMap();
+    }
+
+    put('radius/button', button);
+    put('radius/input', input);
+    put('radius/hero', hero);
+    put('radius/modal', modal);
+    put('radius/card-sm', cardSm);
+    put('radius/card-md', cardMd);
+    put('radius/card-lg', cardLg);
+
     return map;
   }
 }
