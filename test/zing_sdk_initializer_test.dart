@@ -13,8 +13,10 @@ class _MockZingSdkInitializerPlatform
   int loginCount = 0;
   int logoutCount = 0;
   int openScreenCount = 0;
+  int setProfileParamsCount = 0;
   SdkAuthentication? lastAuth;
   StartingRoute? lastRoute;
+  ProfileParams? lastProfileParams;
 
   final _authStateController = StreamController<SdkAuthState>.broadcast();
 
@@ -45,6 +47,15 @@ class _MockZingSdkInitializerPlatform
   }
 
   @override
+  Future<void> setProfileParams(ProfileParams params) async {
+    setProfileParamsCount += 1;
+    lastProfileParams = params;
+  }
+
+  @override
+  Future<void> registerBackgroundSetup(Future<void> Function() setup) async {}
+
+  @override
   Stream<SdkAuthState> get authStateStream => _authStateController.stream;
 
   void emitAuthState(SdkAuthState state) => _authStateController.add(state);
@@ -54,8 +65,10 @@ class _MockZingSdkInitializerPlatform
     loginCount = 0;
     logoutCount = 0;
     openScreenCount = 0;
+    setProfileParamsCount = 0;
     lastAuth = null;
     lastRoute = null;
+    lastProfileParams = null;
   }
 
   void dispose() => _authStateController.close();
