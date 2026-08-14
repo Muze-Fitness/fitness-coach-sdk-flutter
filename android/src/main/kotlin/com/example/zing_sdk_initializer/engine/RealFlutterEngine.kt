@@ -58,7 +58,8 @@ internal class RealFlutterEngineFactory(
         (flutterEngine.plugins.get(ZingSdkInitializerPlugin::class.java) as? ZingSdkInitializerPlugin)
             ?.isBackground = true
 
-        // setup → ZingSdk.init → republishes _sdkAuth (rebinds it to this engine)
+        // setup → ZingSdk.init (theme/configuration only; the SDK persists the
+        // logged-in session itself, so no auth needs to be replayed here)
         val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, BACKGROUND_CHANNEL)
         channel.setMethodCallHandler { call, result ->
             when (call.method) {

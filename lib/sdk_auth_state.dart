@@ -6,7 +6,8 @@ sealed class SdkAuthState {
     return switch (map['state'] as String) {
       'loggedOut' => const SdkAuthStateLoggedOut(),
       'inProgress' => const SdkAuthStateInProgress(),
-      'authenticated' => const SdkAuthStateAuthenticated(),
+      'authenticated' =>
+        SdkAuthStateAuthenticated(map['userId'] as String),
       _ => throw ArgumentError('Unknown auth state: ${map['state']}'),
     };
   }
@@ -41,15 +42,22 @@ class SdkAuthStateInProgress extends SdkAuthState {
 }
 
 /// The user is authenticated.
+///
+/// [userId] is the authenticated user's id — for [SdkAuthentication.apiKey]
+/// this is `partnerUserId` (or the SDK-generated id, if omitted); for
+/// [SdkAuthentication.externalToken] this is the `sub` claim of the JWT.
 class SdkAuthStateAuthenticated extends SdkAuthState {
-  const SdkAuthStateAuthenticated();
+  const SdkAuthStateAuthenticated(this.userId);
+
+  final String userId;
 
   @override
-  bool operator ==(Object other) => other is SdkAuthStateAuthenticated;
+  bool operator ==(Object other) =>
+      other is SdkAuthStateAuthenticated && other.userId == userId;
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, userId);
 
   @override
-  String toString() => 'SdkAuthState.authenticated';
+  String toString() => 'SdkAuthState.authenticated(userId: $userId)';
 }

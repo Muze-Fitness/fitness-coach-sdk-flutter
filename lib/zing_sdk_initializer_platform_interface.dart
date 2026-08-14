@@ -31,7 +31,6 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
   }
 
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) {
@@ -43,7 +42,7 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
         'registerBackgroundSetup() has not been implemented.');
   }
 
-  Future<void> login() {
+  Future<void> login(SdkAuthentication authentication) {
     throw UnimplementedError('login() has not been implemented.');
   }
 

@@ -19,15 +19,12 @@ class ZingSdk {
 
   static final ZingSdk instance = ZingSdk._();
 
-  /// Initializes the native SDK with the given authentication and optional
-  /// [configuration] and [theme].
+  /// Initializes the native SDK with optional [configuration] and [theme].
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) {
     return ZingSdkInitializerPlatform.instance.init(
-      authentication: authentication,
       configuration: configuration,
       theme: theme,
     );
@@ -44,9 +41,9 @@ class ZingSdk {
     return ZingSdkInitializerPlatform.instance.registerBackgroundSetup(setup);
   }
 
-  /// Triggers the login flow in the native SDK.
-  Future<void> login() {
-    return ZingSdkInitializerPlatform.instance.login();
+  /// Authenticates and starts a session using [authentication].
+  Future<void> login(SdkAuthentication authentication) {
+    return ZingSdkInitializerPlatform.instance.login(authentication);
   }
 
   /// Logs out from the native SDK.

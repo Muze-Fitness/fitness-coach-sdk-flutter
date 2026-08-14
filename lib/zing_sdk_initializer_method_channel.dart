@@ -25,31 +25,12 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   final authStateEventChannel =
       const EventChannel('zing_sdk_initializer/auth_state');
 
-  /// Reverse method channel for native-to-Dart token callbacks.
-  @visibleForTesting
-  final authTokenCallbackChannel =
-      const MethodChannel('zing_sdk_initializer/auth_token_callback');
-
-  AuthTokenCallback? _authTokenCallback;
-
   @override
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) {
     final args = <String, dynamic>{};
-    switch (authentication) {
-      case SdkPlatformApiKeyAuth(:final ios, :final android):
-        final apiKey =
-            defaultTargetPlatform == TargetPlatform.iOS ? ios : android;
-        args['type'] = 'apiKey';
-        args['apiKey'] = apiKey;
-      case SdkExternalTokenAuth(:final callback):
-        _authTokenCallback = callback;
-        _setupAuthTokenCallbackHandler();
-        args['type'] = 'externalToken';
-    }
 
     if (configuration != null) {
       args['configuration'] = configuration.toMap();
@@ -84,8 +65,23 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   }
 
   @override
-  Future<void> login() {
-    return methodChannel.invokeMethod<void>('login');
+  Future<void> login(SdkAuthentication authentication) {
+    final args = <String, dynamic>{};
+    switch (authentication) {
+      case SdkPlatformApiKeyAuth(:final ios, :final android, :final partnerUserId):
+        final apiKey =
+            defaultTargetPlatform == TargetPlatform.iOS ? ios : android;
+        args['type'] = 'apiKey';
+        args['apiKey'] = apiKey;
+        if (partnerUserId != null) {
+          args['partnerUserId'] = partnerUserId;
+        }
+      case SdkExternalTokenAuth(:final jwtToken):
+        args['type'] = 'externalToken';
+        args['jwtToken'] = jwtToken;
+    }
+
+    return methodChannel.invokeMethod<void>('login', args);
   }
 
   @override
@@ -111,23 +107,6 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
         authStateEventChannel.receiveBroadcastStream().map((event) {
       return SdkAuthState.fromMap(Map<String, dynamic>.from(event as Map));
     }).asBroadcastStream();
-  }
-
-  void _setupAuthTokenCallbackHandler() {
-    authTokenCallbackChannel.setMethodCallHandler((call) async {
-      final callback = _authTokenCallback;
-      if (callback == null) return null;
-
-      switch (call.method) {
-        case 'getAuthToken':
-          return await callback.getAuthToken();
-        case 'onTokenInvalid':
-          callback.onTokenInvalid();
-          return null;
-        default:
-          return null;
-      }
-    });
   }
 }
 

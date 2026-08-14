@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 
+const _apiKeyIos = 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf';
+const _apiKeyAndroid = 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S';
+
 /// SDK setup used both on app startup (foreground) and in the headless background
 /// isolate (Health Connect background sync). Must be a top-level function annotated
 /// with `@pragma('vm:entry-point')` so it survives tree-shaking and can be looked up
@@ -13,10 +16,6 @@ import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 Future<void> zingSdkSetup() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ZingSdk.instance.init(
-    authentication: SdkAuthentication.apiKey(
-      ios: 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf',
-      android: 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S',
-    ),
     configuration: const SdkConfiguration(
       coachesAvailability: CoachesAvailability.userGenderBased,
       genderAvailability: GenderAvailability.binary,
@@ -78,6 +77,7 @@ class _HomePageState extends State<HomePage> {
   String? _error;
   SdkAuthState? _authState;
   StreamSubscription<SdkAuthState>? _authStateSub;
+  String? _partnerUserId;
 
   static const _routes = <(String, StartingRoute)>[
     ('Home', HomeRoute()),
@@ -113,7 +113,13 @@ class _HomePageState extends State<HomePage> {
       if (state is SdkAuthStateAuthenticated) {
         await _sdk.logout();
       } else if (state is! SdkAuthStateInProgress) {
-        await _sdk.login();
+        await _sdk.login(
+          SdkAuthentication.apiKey(
+            ios: _apiKeyIos,
+            android: _apiKeyAndroid,
+            partnerUserId: _partnerUserId,
+          ),
+        );
       }
     } on PlatformException catch (e) {
       setState(() => _error = '${e.code}: ${e.message}');
@@ -136,6 +142,18 @@ class _HomePageState extends State<HomePage> {
     } on PlatformException catch (e) {
       setState(() => _error = '${e.code}: ${e.message}');
     }
+  }
+
+  Future<void> _showSetPartnerIdDialog() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => _SetPartnerIdDialog(initialValue: _partnerUserId),
+    );
+
+    if (result == null || !mounted) return;
+    setState(() {
+      _partnerUserId = result.trim().isEmpty ? null : result.trim();
+    });
   }
 
   Future<void> _openScreen(StartingRoute route) async {
@@ -181,8 +199,46 @@ class _HomePageState extends State<HomePage> {
                 child: const Text('Set Profile Params'),
               ),
             ),
+            if (_authState is SdkAuthStateLoggedOut) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: OutlinedButton(
+                  onPressed: _showSetPartnerIdDialog,
+                  child: Text(
+                    _partnerUserId == null
+                        ? 'Set Partner ID'
+                        : 'Partner ID: $_partnerUserId',
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
-            Center(child: Text('Auth state: ${_authState ?? 'unknown'}')),
+            Center(
+              child: Text(
+                'Auth state: ${switch (_authState) {
+                  SdkAuthStateAuthenticated() => 'Authenticated',
+                  SdkAuthStateInProgress() => 'In progress',
+                  SdkAuthStateLoggedOut() => 'Logged out',
+                  null => 'Unknown',
+                }}',
+              ),
+            ),
+            if (_authState case SdkAuthStateAuthenticated(:final userId)) ...[
+              const SizedBox(height: 4),
+              Center(
+                child: InkWell(
+                  onTap: () async {
+                    await Clipboard.setData(ClipboardData(text: userId));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('User ID copied')),
+                    );
+                  },
+                  child: Text('User ID: $userId'),
+                ),
+              ),
+            ],
             if (_error != null) ...[
               const SizedBox(height: 16),
               Center(
@@ -206,6 +262,47 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SetPartnerIdDialog extends StatefulWidget {
+  const _SetPartnerIdDialog({required this.initialValue});
+
+  final String? initialValue;
+
+  @override
+  State<_SetPartnerIdDialog> createState() => _SetPartnerIdDialogState();
+}
+
+class _SetPartnerIdDialogState extends State<_SetPartnerIdDialog> {
+  late final _controller = TextEditingController(text: widget.initialValue);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Set Partner ID'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(hintText: 'partnerUserId'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Setup'),
+        ),
+      ],
     );
   }
 }
