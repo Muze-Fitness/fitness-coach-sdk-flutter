@@ -22,17 +22,16 @@ class _MockZingSdkInitializerPlatform
 
   @override
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) async {
     initCount += 1;
-    lastAuth = authentication;
   }
 
   @override
-  Future<void> login() async {
+  Future<void> login(SdkAuthentication authentication) async {
     loginCount += 1;
+    lastAuth = authentication;
   }
 
   @override
@@ -96,24 +95,24 @@ void main() {
       mockPlatform.dispose();
     });
 
-    test('init delegates to platform with apiKey auth', () async {
+    test('init delegates to platform', () async {
+      await ZingSdk.instance.init();
+
+      expect(mockPlatform.initCount, equals(1));
+    });
+
+    test('login delegates to platform with apiKey auth', () async {
       const auth = SdkAuthentication.apiKey(
         ios: 'ios-key',
         android: 'android-key',
       );
-      await ZingSdk.instance.init(authentication: auth);
+      await ZingSdk.instance.login(auth);
 
-      expect(mockPlatform.initCount, equals(1));
+      expect(mockPlatform.loginCount, equals(1));
       expect(mockPlatform.lastAuth, isA<SdkPlatformApiKeyAuth>());
       final apiKeyAuth = mockPlatform.lastAuth as SdkPlatformApiKeyAuth;
       expect(apiKeyAuth.ios, 'ios-key');
       expect(apiKeyAuth.android, 'android-key');
-    });
-
-    test('login delegates to platform', () async {
-      await ZingSdk.instance.login();
-
-      expect(mockPlatform.loginCount, equals(1));
     });
 
     test('logout delegates to platform', () async {
@@ -134,13 +133,14 @@ void main() {
       final sub = ZingSdk.instance.authState.listen(states.add);
 
       mockPlatform.emitAuthState(const SdkAuthStateInProgress());
-      mockPlatform.emitAuthState(const SdkAuthStateAuthenticated());
+      mockPlatform.emitAuthState(const SdkAuthStateAuthenticated('user-1'));
 
       await Future<void>.delayed(Duration.zero);
 
       expect(states, hasLength(2));
       expect(states[0], isA<SdkAuthStateInProgress>());
       expect(states[1], isA<SdkAuthStateAuthenticated>());
+      expect((states[1] as SdkAuthStateAuthenticated).userId, 'user-1');
 
       await sub.cancel();
     });
@@ -168,8 +168,10 @@ void main() {
     test('authenticated', () {
       final state = SdkAuthState.fromMap({
         'state': 'authenticated',
+        'userId': 'user-1',
       });
       expect(state, isA<SdkAuthStateAuthenticated>());
+      expect((state as SdkAuthStateAuthenticated).userId, 'user-1');
     });
 
     test('unknown state throws', () {
