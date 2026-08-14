@@ -4,6 +4,7 @@ import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
+import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
 import 'zing_sdk_initializer_method_channel.dart';
@@ -60,5 +61,10 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
 
   Stream<SdkAuthState> get authStateStream {
     throw UnimplementedError('authStateStream has not been implemented.');
+  }
+
+  void setCriticalErrorCallback(CriticalErrorCallback? callback) {
+    throw UnimplementedError(
+        'setCriticalErrorCallback() has not been implemented.');
   }
 }

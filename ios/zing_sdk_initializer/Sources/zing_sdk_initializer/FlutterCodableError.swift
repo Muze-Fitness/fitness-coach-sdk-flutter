@@ -19,6 +19,12 @@ extension ZingSdkInitializerPlugin.PluginError: FlutterCodableError {
     }
 }
 
+extension AuthError: FlutterCodableError {
+    var flutterCode: String {
+        "auth_error"
+    }
+}
+
 extension LoginError: FlutterCodableError {
     var flutterCode: String {
         "login_failed"

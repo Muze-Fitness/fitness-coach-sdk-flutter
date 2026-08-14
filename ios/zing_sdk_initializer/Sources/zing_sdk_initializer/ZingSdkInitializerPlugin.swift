@@ -6,10 +6,12 @@ import ZingCoachSDK
 public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
     private var sdk: ZingSDK?
     private var authStateChannel: FlutterEventChannel?
+    private var criticalErrorChannel: FlutterMethodChannel?
 
     private enum Channel {
         static let initializer = "zing_sdk_initializer"
         static let authState = "zing_sdk_initializer/auth_state"
+        static let criticalErrorHandler = "zing_sdk_initializer/critical_error_handler"
     }
 
     private enum Method {
@@ -56,6 +58,10 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
 
         let instance = ZingSdkInitializerPlugin()
         instance.authStateChannel = authStateChannel
+        instance.criticalErrorChannel = FlutterMethodChannel(
+            name: Channel.criticalErrorHandler,
+            binaryMessenger: registrar.messenger()
+        )
 
         registrar.addMethodCallDelegate(instance, channel: initializerChannel)
     }
@@ -117,6 +123,8 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
                 let sdkInstance = try await ZingSDK.initialize(with: parameters)
                 self.sdk = sdkInstance
                 self.authStateChannel?.setStreamHandler(AuthStateStreamHandler(sdk: sdkInstance))
+                sdkInstance.criticalErrorHandler = self.criticalErrorChannel
+                    .map(CriticalErrorHandler.init(channel:))
                 completion(nil)
             } catch {
                 completion(PluginError.nativeInitFailed.toFlutter())
