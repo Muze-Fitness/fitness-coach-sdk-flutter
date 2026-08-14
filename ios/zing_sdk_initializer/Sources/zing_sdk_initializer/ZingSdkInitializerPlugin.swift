@@ -5,13 +5,11 @@ import ZingCoachSDK
 
 public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
     private var sdk: ZingSDK?
-    private var authTokenChannel: FlutterMethodChannel?
     private var authStateChannel: FlutterEventChannel?
 
     private enum Channel {
         static let initializer = "zing_sdk_initializer"
         static let authState = "zing_sdk_initializer/auth_state"
-        static let authTokenCallback = "zing_sdk_initializer/auth_token_callback"
     }
 
     private enum Method {
@@ -38,6 +36,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case notInitialized
         case alreadyInitialized
         case nativeInitFailed
+        case loginFailed
         case missingRoute
         case unknownRoute(String)
         case noRootViewController
@@ -57,10 +56,6 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
 
         let instance = ZingSdkInitializerPlugin()
         instance.authStateChannel = authStateChannel
-        instance.authTokenChannel = FlutterMethodChannel(
-            name: Channel.authTokenCallback,
-            binaryMessenger: registrar.messenger()
-        )
 
         registrar.addMethodCallDelegate(instance, channel: initializerChannel)
     }
@@ -70,7 +65,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case Method.initialize:
             handleInitialize(method: call, result)
         case Method.login:
-            handleLogin(result)
+            handleLogin(method: call, result)
         case Method.logout:
             handleLogout(result)
         case Method.openScreen:
@@ -88,32 +83,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             return
         }
 
-        guard
-            let args = method.arguments as? [String: Any],
-            let type = args["type"] as? String
-        else {
-            completion(PluginError.nativeInitFailed.toFlutter())
-            return
-        }
-
-        let authentication: ZingSDK.AuthenticationType
-        switch type {
-        case "apiKey":
-            guard let key = args["apiKey"] as? String else {
-                completion(PluginError.nativeInitFailed.toFlutter())
-                return
-            }
-            authentication = .apiKey(key: key)
-        case "externalToken":
-            guard let channel = authTokenChannel else {
-                completion(PluginError.nativeInitFailed.toFlutter())
-                return
-            }
-            authentication = .externalToken(provider: AuthAdapter(channel: channel), errorHandler: self)
-        default:
-            completion(PluginError.nativeInitFailed.toFlutter())
-            return
-        }
+        let args = method.arguments as? [String: Any] ?? [:]
 
         let configuration: ZingSDK.Configuration
         if let configDict = args["configuration"] as? [String: Any] {
@@ -138,7 +108,6 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
 
         let theme = (args["theme"] as? [String: Any]).map { FlutterTheme(arguments: $0).build() }
         let parameters = ZingSDK.InitializationParameters(
-            authentication: authentication,
             theme: theme,
             configuration: configuration
         )
@@ -155,14 +124,42 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    private func handleLogin(_ completion: @escaping FlutterResult) {
+    private func handleLogin(method: FlutterMethodCall, _ completion: @escaping FlutterResult) {
         guard let sdk else {
             completion(PluginError.notInitialized.toFlutter())
             return
         }
+
+        guard
+            let args = method.arguments as? [String: Any],
+            let type = args["type"] as? String
+        else {
+            completion(PluginError.loginFailed.toFlutter())
+            return
+        }
+
+        let authentication: ZingSDK.AuthenticationType
+        switch type {
+        case "apiKey":
+            guard let key = args["apiKey"] as? String else {
+                completion(PluginError.loginFailed.toFlutter())
+                return
+            }
+            authentication = .apiKey(key: key, partnerUserID: args["partnerUserId"] as? String)
+        case "externalToken":
+            guard let token = args["jwtToken"] as? String else {
+                completion(PluginError.loginFailed.toFlutter())
+                return
+            }
+            authentication = .jwtToken(token: token)
+        default:
+            completion(PluginError.loginFailed.toFlutter())
+            return
+        }
+
         Task { @MainActor in
             do {
-                try await sdk.login()
+                try await sdk.login(with: authentication)
                 completion(nil)
             } catch {
                 completion(error.toFlutter())
@@ -289,16 +286,6 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case "all": .all
         case "binary": .binary
         default: nil
-        }
-    }
-}
-
-extension ZingSdkInitializerPlugin: ZingSDK.ErrorHandler {
-    public func didReceiveError(_ error: AuthError) {
-        if case .badToken = error {
-            DispatchQueue.main.async { [weak self] in
-                self?.authTokenChannel?.invokeMethod("onTokenInvalid", arguments: nil)
-            }
         }
     }
 }
