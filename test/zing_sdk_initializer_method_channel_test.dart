@@ -158,6 +158,44 @@ void main() {
     );
   });
 
+  test('native critical error reaches the registered callback', () async {
+    final callback = _StubCallback();
+    platform.setCriticalErrorCallback(callback);
+    addTearDown(() => platform.setCriticalErrorCallback(null));
+
+    await _sendNativeCriticalError({
+      'code': 'auth_error',
+      'message': 'invalidCredentialsForRefreshRequest',
+    });
+
+    expect(callback.errors, hasLength(1));
+    expect(callback.errors.single.code, 'auth_error');
+    expect(
+      callback.errors.single.message,
+      'invalidCredentialsForRefreshRequest',
+    );
+  });
+
+  test('unmapped native error code is forwarded verbatim', () async {
+    final callback = _StubCallback();
+    platform.setCriticalErrorCallback(callback);
+    addTearDown(() => platform.setCriticalErrorCallback(null));
+
+    await _sendNativeCriticalError({'code': 'unknown', 'message': null});
+
+    expect(callback.errors.single.code, 'unknown');
+    expect(callback.errors.single.message, isNull);
+  });
+
+  test('native critical error is dropped when no callback is set', () async {
+    platform.setCriticalErrorCallback(null);
+
+    await expectLater(
+      _sendNativeCriticalError({'code': 'auth_error', 'message': 'error'}),
+      completes,
+    );
+  });
+
   test('setProfileParams sends full payload', () async {
     await platform.setProfileParams(
       const ProfileParams(
@@ -183,4 +221,22 @@ void main() {
       }),
     );
   });
+}
+
+Future<void> _sendNativeCriticalError(Map<String, Object?> payload) {
+  return TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .handlePlatformMessage(
+        'zing_sdk_initializer/critical_error_handler',
+        const StandardMethodCodec().encodeMethodCall(
+          MethodCall('onCriticalError', payload),
+        ),
+        (ByteData? _) {},
+      );
+}
+
+class _StubCallback implements CriticalErrorCallback {
+  final errors = <PlatformException>[];
+
+  @override
+  void onCriticalError(PlatformException error) => errors.add(error);
 }

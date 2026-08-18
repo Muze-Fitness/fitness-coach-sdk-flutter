@@ -1,10 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer_method_channel.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer_platform_interface.dart';
+
+class _StubCallback implements CriticalErrorCallback {
+  @override
+  void onCriticalError(PlatformException error) {}
+}
 
 class _MockZingSdkInitializerPlatform
     with MockPlatformInterfaceMixin
@@ -17,6 +23,7 @@ class _MockZingSdkInitializerPlatform
   SdkAuthentication? lastAuth;
   StartingRoute? lastRoute;
   ProfileParams? lastProfileParams;
+  CriticalErrorCallback? lastCriticalErrorCallback;
 
   final _authStateController = StreamController<SdkAuthState>.broadcast();
 
@@ -53,6 +60,11 @@ class _MockZingSdkInitializerPlatform
 
   @override
   Future<void> registerBackgroundSetup(Future<void> Function() setup) async {}
+
+  @override
+  void setCriticalErrorCallback(CriticalErrorCallback? callback) {
+    lastCriticalErrorCallback = callback;
+  }
 
   @override
   Stream<SdkAuthState> get authStateStream => _authStateController.stream;
@@ -126,6 +138,14 @@ void main() {
 
       expect(mockPlatform.openScreenCount, equals(1));
       expect(mockPlatform.lastRoute, isA<AiAssistantRoute>());
+    });
+
+    test('criticalErrorCallback delegates to platform', () {
+      final callback = _StubCallback();
+
+      ZingSdk.instance.criticalErrorCallback = callback;
+
+      expect(mockPlatform.lastCriticalErrorCallback, same(callback));
     });
 
     test('authState stream emits state changes', () async {
