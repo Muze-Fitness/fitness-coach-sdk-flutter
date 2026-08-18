@@ -8,13 +8,16 @@ import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
+import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
 
 /// An implementation of [ZingSdkInitializerPlatform] that uses method channels.
 class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
-  MethodChannelZingSdkInitializer();
+  MethodChannelZingSdkInitializer() {
+    criticalErrorChannel.setMethodCallHandler(_handleCriticalErrorCall);
+  }
 
   /// The method channel used to interact with the native platform.
   @visibleForTesting
@@ -24,6 +27,13 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   @visibleForTesting
   final authStateEventChannel =
       const EventChannel('zing_sdk_initializer/auth_state');
+
+  /// Method channel for native-to-Dart critical error callbacks.
+  @visibleForTesting
+  final criticalErrorChannel =
+      const MethodChannel('zing_sdk_initializer/critical_error_handler');
+
+  CriticalErrorCallback? _criticalErrorCallback;
 
   @override
   Future<void> init({
@@ -97,6 +107,24 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   @override
   Future<void> setProfileParams(ProfileParams params) {
     return methodChannel.invokeMethod<void>('setProfileParams', params.toMap());
+  }
+
+  @override
+  void setCriticalErrorCallback(CriticalErrorCallback? callback) {
+    _criticalErrorCallback = callback;
+  }
+
+  Future<void> _handleCriticalErrorCall(MethodCall call) async {
+    final callback = _criticalErrorCallback;
+    if (callback == null) return;
+
+    if (call.method == 'onCriticalError') {
+      final args = Map<String, dynamic>.from(call.arguments as Map);
+      callback.onCriticalError(PlatformException(
+        code: args['code'] as String,
+        message: args['message'] as String?,
+      ));
+    }
   }
 
   Stream<SdkAuthState>? _authStateStream;
