@@ -4,6 +4,7 @@ import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
+import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
 import 'zing_sdk_initializer_method_channel.dart';
@@ -31,7 +32,6 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
   }
 
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) {
@@ -43,7 +43,7 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
         'registerBackgroundSetup() has not been implemented.');
   }
 
-  Future<void> login() {
+  Future<void> login(SdkAuthentication authentication) {
     throw UnimplementedError('login() has not been implemented.');
   }
 
@@ -61,5 +61,10 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
 
   Stream<SdkAuthState> get authStateStream {
     throw UnimplementedError('authStateStream has not been implemented.');
+  }
+
+  void setCriticalErrorCallback(CriticalErrorCallback? callback) {
+    throw UnimplementedError(
+        'setCriticalErrorCallback() has not been implemented.');
   }
 }

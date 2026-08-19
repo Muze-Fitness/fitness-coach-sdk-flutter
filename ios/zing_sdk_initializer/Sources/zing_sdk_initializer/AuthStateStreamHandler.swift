@@ -34,8 +34,8 @@ private extension LoginState {
             return ["state": "loggedOut"]
         case .inProgress:
             return ["state": "inProgress"]
-        case .loggedIn:
-            return ["state": "authenticated"]
+        case .loggedIn(let partnerUserID):
+            return ["state": "authenticated", "userId": partnerUserID]
         }
     }
 }

@@ -33,8 +33,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     companion object {
         private const val CHANNEL_NAME = "zing_sdk_initializer"
         private const val AUTH_STATE_CHANNEL_NAME = "zing_sdk_initializer/auth_state"
-        private const val AUTH_TOKEN_CALLBACK_CHANNEL_NAME =
-            "zing_sdk_initializer/auth_token_callback"
+        private const val CRITICAL_ERROR_CHANNEL_NAME = "zing_sdk_initializer/critical_error_handler"
         private const val TAG = "ZingSdkInitializer"
         private const val METHOD_INIT = "init"
         private const val METHOD_LOGIN = "login"
@@ -59,7 +58,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
     private lateinit var channel: MethodChannel
     private lateinit var authStateEventChannel: EventChannel
-    private lateinit var authTokenCallbackChannel: MethodChannel
+    private lateinit var criticalErrorChannel: MethodChannel
     private var activityContext: Context? = null
     private var appContext: Context? = null
 
@@ -75,8 +74,8 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         authStateEventChannel = EventChannel(binding.binaryMessenger, AUTH_STATE_CHANNEL_NAME)
         authStateEventChannel.setStreamHandler(AuthStateStreamHandler(scope))
 
-        authTokenCallbackChannel =
-            MethodChannel(binding.binaryMessenger, AUTH_TOKEN_CALLBACK_CHANNEL_NAME)
+        criticalErrorChannel = MethodChannel(binding.binaryMessenger, CRITICAL_ERROR_CHANNEL_NAME)
+        ZingSdk.criticalErrorHandler = CriticalErrorHandler(criticalErrorChannel, scope)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -89,7 +88,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             METHOD_INIT -> handleInit(call, result)
-            METHOD_LOGIN -> handleLogin(result)
+            METHOD_LOGIN -> handleLogin(call, result)
             METHOD_LOGOUT -> handleLogout(result)
             METHOD_OPEN_SCREEN -> handleOpenScreen(call, result)
             METHOD_SET_PROFILE_PARAMS -> handleSetProfileParams(call, result)
@@ -101,23 +100,6 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private fun handleInit(call: MethodCall, result: MethodChannel.Result) {
         scope.launch {
             runCatching {
-                val type = call.argument<String>("type")
-                val auth = when (type) {
-                    "apiKey" -> {
-                        val apiKey = call.argument<String>("apiKey")
-                            ?: throw IllegalArgumentException("apiKey is required")
-                        SdkAuthentication.ApiKey(apiKey = apiKey)
-                    }
-
-                    "externalToken" -> {
-                        SdkAuthentication.ExternalToken(
-                            authTokenCallback = FlutterAuthTokenCallback(authTokenCallbackChannel)
-                        )
-                    }
-
-                    else -> throw IllegalArgumentException("Unknown auth type: $type")
-                }
-
                 val themeMap = call.argument<Map<String, Any>>("theme")
                 val theme = buildTheme(themeMap)
 
@@ -128,13 +110,13 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     if (ZingFlutterEngineManager.instance?.state?.value?.foregroundAlive == true) {
                         Log.i(TAG, "Foreground active; skipping background init")
                     } else {
-                        ZingSdk.init(auth, theme, configuration)
-                        Log.i(TAG, "Zing SDK initialized (background, auth type: $type)")
+                        ZingSdk.init(theme = theme, configuration = configuration)
+                        Log.i(TAG, "Zing SDK initialized (background)")
                     }
                 } else {
                     ZingFlutterEngineManager.instance?.onForegroundAttached()
-                    ZingSdk.init(auth, theme, configuration)
-                    Log.i(TAG, "Zing SDK initialized (foreground, auth type: $type)")
+                    ZingSdk.init(theme = theme, configuration = configuration)
+                    Log.i(TAG, "Zing SDK initialized (foreground)")
                 }
                 result.success(null)
             }.onFailure { throwable ->
@@ -148,11 +130,31 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
     }
 
-    private fun handleLogin(result: MethodChannel.Result) {
+    private fun handleLogin(call: MethodCall, result: MethodChannel.Result) {
         scope.launch {
             runCatching {
-                ZingSdk.login()
-                Log.i(TAG, "Zing SDK login")
+                val type = call.argument<String>("type")
+                val auth = when (type) {
+                    "apiKey" -> {
+                        val apiKey = call.argument<String>("apiKey")
+                            ?: throw IllegalArgumentException("apiKey is required")
+                        SdkAuthentication.ApiKey(
+                            apiKey = apiKey,
+                            partnerUserId = call.argument<String>("partnerUserId"),
+                        )
+                    }
+
+                    "externalToken" -> {
+                        val jwtToken = call.argument<String>("jwtToken")
+                            ?: throw IllegalArgumentException("jwtToken is required")
+                        SdkAuthentication.ExternalToken(jwtToken = jwtToken)
+                    }
+
+                    else -> throw IllegalArgumentException("Unknown auth type: $type")
+                }
+
+                ZingSdk.login(auth)
+                Log.i(TAG, "Zing SDK login (auth type: $type)")
                 result.success(null)
             }.onFailure { throwable ->
                 Log.e(TAG, "Failed to login Zing SDK", throwable)

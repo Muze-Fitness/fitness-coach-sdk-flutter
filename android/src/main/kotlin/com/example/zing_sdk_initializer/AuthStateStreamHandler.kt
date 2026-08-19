@@ -19,7 +19,7 @@ class AuthStateStreamHandler(
                 val map = when (state) {
                     is SdkAuthState.LoggedOut -> mapOf("state" to "loggedOut")
                     is SdkAuthState.InProgress -> mapOf("state" to "inProgress")
-                    is SdkAuthState.LoggedIn -> mapOf("state" to "authenticated")
+                    is SdkAuthState.LoggedIn -> mapOf("state" to "authenticated", "userId" to state.userId)
                     else -> return@collect
                 }
                 events.success(map)

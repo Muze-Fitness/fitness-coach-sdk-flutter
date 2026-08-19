@@ -1,10 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer_method_channel.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer_platform_interface.dart';
+
+class _StubCallback implements CriticalErrorCallback {
+  @override
+  void onCriticalError(PlatformException error) {}
+}
 
 class _MockZingSdkInitializerPlatform
     with MockPlatformInterfaceMixin
@@ -17,22 +23,22 @@ class _MockZingSdkInitializerPlatform
   SdkAuthentication? lastAuth;
   StartingRoute? lastRoute;
   ProfileParams? lastProfileParams;
+  CriticalErrorCallback? lastCriticalErrorCallback;
 
   final _authStateController = StreamController<SdkAuthState>.broadcast();
 
   @override
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) async {
     initCount += 1;
-    lastAuth = authentication;
   }
 
   @override
-  Future<void> login() async {
+  Future<void> login(SdkAuthentication authentication) async {
     loginCount += 1;
+    lastAuth = authentication;
   }
 
   @override
@@ -54,6 +60,11 @@ class _MockZingSdkInitializerPlatform
 
   @override
   Future<void> registerBackgroundSetup(Future<void> Function() setup) async {}
+
+  @override
+  void setCriticalErrorCallback(CriticalErrorCallback? callback) {
+    lastCriticalErrorCallback = callback;
+  }
 
   @override
   Stream<SdkAuthState> get authStateStream => _authStateController.stream;
@@ -96,24 +107,24 @@ void main() {
       mockPlatform.dispose();
     });
 
-    test('init delegates to platform with apiKey auth', () async {
+    test('init delegates to platform', () async {
+      await ZingSdk.instance.init();
+
+      expect(mockPlatform.initCount, equals(1));
+    });
+
+    test('login delegates to platform with apiKey auth', () async {
       const auth = SdkAuthentication.apiKey(
         ios: 'ios-key',
         android: 'android-key',
       );
-      await ZingSdk.instance.init(authentication: auth);
+      await ZingSdk.instance.login(auth);
 
-      expect(mockPlatform.initCount, equals(1));
+      expect(mockPlatform.loginCount, equals(1));
       expect(mockPlatform.lastAuth, isA<SdkPlatformApiKeyAuth>());
       final apiKeyAuth = mockPlatform.lastAuth as SdkPlatformApiKeyAuth;
       expect(apiKeyAuth.ios, 'ios-key');
       expect(apiKeyAuth.android, 'android-key');
-    });
-
-    test('login delegates to platform', () async {
-      await ZingSdk.instance.login();
-
-      expect(mockPlatform.loginCount, equals(1));
     });
 
     test('logout delegates to platform', () async {
@@ -129,18 +140,27 @@ void main() {
       expect(mockPlatform.lastRoute, isA<AiAssistantRoute>());
     });
 
+    test('criticalErrorCallback delegates to platform', () {
+      final callback = _StubCallback();
+
+      ZingSdk.instance.criticalErrorCallback = callback;
+
+      expect(mockPlatform.lastCriticalErrorCallback, same(callback));
+    });
+
     test('authState stream emits state changes', () async {
       final states = <SdkAuthState>[];
       final sub = ZingSdk.instance.authState.listen(states.add);
 
       mockPlatform.emitAuthState(const SdkAuthStateInProgress());
-      mockPlatform.emitAuthState(const SdkAuthStateAuthenticated());
+      mockPlatform.emitAuthState(const SdkAuthStateAuthenticated('user-1'));
 
       await Future<void>.delayed(Duration.zero);
 
       expect(states, hasLength(2));
       expect(states[0], isA<SdkAuthStateInProgress>());
       expect(states[1], isA<SdkAuthStateAuthenticated>());
+      expect((states[1] as SdkAuthStateAuthenticated).userId, 'user-1');
 
       await sub.cancel();
     });
@@ -168,8 +188,10 @@ void main() {
     test('authenticated', () {
       final state = SdkAuthState.fromMap({
         'state': 'authenticated',
+        'userId': 'user-1',
       });
       expect(state, isA<SdkAuthStateAuthenticated>());
+      expect((state as SdkAuthStateAuthenticated).userId, 'user-1');
     });
 
     test('unknown state throws', () {

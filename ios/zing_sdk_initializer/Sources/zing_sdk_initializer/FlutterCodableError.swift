@@ -11,6 +11,7 @@ extension ZingSdkInitializerPlugin.PluginError: FlutterCodableError {
         case .notInitialized: "not_initialized"
         case .alreadyInitialized: "already_initialized"
         case .nativeInitFailed: "native_init_failed"
+        case .loginFailed: "login_failed"
         case .missingRoute: "missing_route"
         case .unknownRoute: "unknown_route"
         case .noRootViewController: "no_activity"

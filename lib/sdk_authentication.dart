@@ -1,43 +1,38 @@
-import 'dart:async';
-
-/// Callback interface for external token authentication.
-///
-/// Implementations provide the SDK with a way to obtain and refresh
-/// authentication tokens managed by the host application.
-abstract interface class AuthTokenCallback {
-  /// Returns a valid authentication token for the current user.
-  Future<String> getAuthToken();
-
-  /// Called when the SDK detects that the current token is no longer valid.
-  void onTokenInvalid();
-}
-
 /// Determines how the SDK authenticates with the Zing backend.
 sealed class SdkAuthentication {
   const SdkAuthentication();
 
   /// Authenticate using platform-specific API keys.
+  ///
+  /// Pass [partnerUserId] to link the session to your own user id. If
+  /// omitted, the SDK generates an id for a new user.
   const factory SdkAuthentication.apiKey({
     required String ios,
     required String android,
+    String? partnerUserId,
   }) = SdkPlatformApiKeyAuth;
 
-  /// Authenticate using an external token provider.
-  const factory SdkAuthentication.externalToken(AuthTokenCallback callback) =
+  /// Authenticate using a JWT minted by your own backend.
+  const factory SdkAuthentication.externalToken(String jwtToken) =
       SdkExternalTokenAuth;
 }
 
 /// Platform-specific API-key authentication.
 class SdkPlatformApiKeyAuth extends SdkAuthentication {
-  const SdkPlatformApiKeyAuth({required this.ios, required this.android});
+  const SdkPlatformApiKeyAuth({
+    required this.ios,
+    required this.android,
+    this.partnerUserId,
+  });
 
   final String ios;
   final String android;
+  final String? partnerUserId;
 }
 
-/// External token authentication delegating to [AuthTokenCallback].
+/// External-token authentication using a JWT minted by your own backend.
 class SdkExternalTokenAuth extends SdkAuthentication {
-  const SdkExternalTokenAuth(this.callback);
+  const SdkExternalTokenAuth(this.jwtToken);
 
-  final AuthTokenCallback callback;
+  final String jwtToken;
 }

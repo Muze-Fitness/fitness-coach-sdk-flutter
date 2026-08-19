@@ -25,63 +25,8 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('init with apiKey sends correct android arguments', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-    await platform.init(
-      authentication: const SdkAuthentication.apiKey(
-        ios: 'ios-key',
-        android: 'android-key',
-      ),
-    );
-
-    expect(capturedCall?.method, 'init');
-    expect(
-      capturedCall?.arguments,
-      equals({'type': 'apiKey', 'apiKey': 'android-key'}),
-    );
-  });
-
-  test('init with apiKey sends correct ios arguments', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-    await platform.init(
-      authentication: const SdkAuthentication.apiKey(
-        ios: 'ios-key',
-        android: 'android-key',
-      ),
-    );
-
-    expect(capturedCall?.method, 'init');
-    expect(
-      capturedCall?.arguments,
-      equals({'type': 'apiKey', 'apiKey': 'ios-key'}),
-    );
-  });
-
-  test('init with externalToken sends correct arguments', () async {
-    await platform.init(
-      authentication: SdkAuthentication.externalToken(_StubCallback()),
-    );
-
-    expect(capturedCall?.method, 'init');
-    expect(
-      capturedCall?.arguments,
-      equals({'type': 'externalToken'}),
-    );
-  });
-
   test('init forwards configuration as method channel args', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
     await platform.init(
-      authentication: const SdkAuthentication.apiKey(
-        ios: 'ios-key',
-        android: 'android-key',
-      ),
       configuration: const SdkConfiguration(
         coachesAvailability: CoachesAvailability.userGenderBased,
         genderAvailability: GenderAvailability.binary,
@@ -92,8 +37,6 @@ void main() {
     expect(
       capturedCall?.arguments,
       equals({
-        'type': 'apiKey',
-        'apiKey': 'ios-key',
         'configuration': {
           'coachesAvailability': 'userGenderBased',
           'genderAvailability': 'binary',
@@ -104,14 +47,7 @@ void main() {
   });
 
   test('init forwards theme payload', () async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
     await platform.init(
-      authentication: const SdkAuthentication.apiKey(
-        ios: 'ios-key',
-        android: 'android-key',
-      ),
       theme: const SdkTheme(
         colors: SdkColors(
           brandPrimary: Color(0xFFFF0000),
@@ -126,8 +62,6 @@ void main() {
     expect(
       capturedCall?.arguments,
       equals({
-        'type': 'apiKey',
-        'apiKey': 'ios-key',
         'theme': {
           'colors': {
             'brand/primary': 0xFFFF0000,
@@ -142,11 +76,69 @@ void main() {
     );
   });
 
-  test('login delegates through method channel', () async {
-    await platform.login();
+  test('login with apiKey sends correct android arguments', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await platform.login(
+      const SdkAuthentication.apiKey(ios: 'ios-key', android: 'android-key'),
+    );
 
     expect(capturedCall?.method, 'login');
-    expect(capturedCall?.arguments, isNull);
+    expect(
+      capturedCall?.arguments,
+      equals({'type': 'apiKey', 'apiKey': 'android-key'}),
+    );
+  });
+
+  test('login with apiKey sends correct ios arguments', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await platform.login(
+      const SdkAuthentication.apiKey(ios: 'ios-key', android: 'android-key'),
+    );
+
+    expect(capturedCall?.method, 'login');
+    expect(
+      capturedCall?.arguments,
+      equals({'type': 'apiKey', 'apiKey': 'ios-key'}),
+    );
+  });
+
+  test('login with apiKey forwards partnerUserId when provided', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    await platform.login(
+      const SdkAuthentication.apiKey(
+        ios: 'ios-key',
+        android: 'android-key',
+        partnerUserId: 'user-1',
+      ),
+    );
+
+    expect(capturedCall?.method, 'login');
+    expect(
+      capturedCall?.arguments,
+      equals({
+        'type': 'apiKey',
+        'apiKey': 'android-key',
+        'partnerUserId': 'user-1',
+      }),
+    );
+  });
+
+  test('login with externalToken sends the jwt', () async {
+    await platform.login(
+      const SdkAuthentication.externalToken('stub-token'),
+    );
+
+    expect(capturedCall?.method, 'login');
+    expect(
+      capturedCall?.arguments,
+      equals({'type': 'externalToken', 'jwtToken': 'stub-token'}),
+    );
   });
 
   test('logout delegates through method channel', () async {
@@ -163,6 +155,44 @@ void main() {
     expect(
       capturedCall?.arguments,
       equals({'route': 'custom_workout'}),
+    );
+  });
+
+  test('native critical error reaches the registered callback', () async {
+    final callback = _StubCallback();
+    platform.setCriticalErrorCallback(callback);
+    addTearDown(() => platform.setCriticalErrorCallback(null));
+
+    await _sendNativeCriticalError({
+      'code': 'auth_error',
+      'message': 'invalidCredentialsForRefreshRequest',
+    });
+
+    expect(callback.errors, hasLength(1));
+    expect(callback.errors.single.code, 'auth_error');
+    expect(
+      callback.errors.single.message,
+      'invalidCredentialsForRefreshRequest',
+    );
+  });
+
+  test('unmapped native error code is forwarded verbatim', () async {
+    final callback = _StubCallback();
+    platform.setCriticalErrorCallback(callback);
+    addTearDown(() => platform.setCriticalErrorCallback(null));
+
+    await _sendNativeCriticalError({'code': 'unknown', 'message': null});
+
+    expect(callback.errors.single.code, 'unknown');
+    expect(callback.errors.single.message, isNull);
+  });
+
+  test('native critical error is dropped when no callback is set', () async {
+    platform.setCriticalErrorCallback(null);
+
+    await expectLater(
+      _sendNativeCriticalError({'code': 'auth_error', 'message': 'error'}),
+      completes,
     );
   });
 
@@ -193,10 +223,20 @@ void main() {
   });
 }
 
-class _StubCallback implements AuthTokenCallback {
-  @override
-  Future<String> getAuthToken() async => 'stub-token';
+Future<void> _sendNativeCriticalError(Map<String, Object?> payload) {
+  return TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .handlePlatformMessage(
+        'zing_sdk_initializer/critical_error_handler',
+        const StandardMethodCodec().encodeMethodCall(
+          MethodCall('onCriticalError', payload),
+        ),
+        (ByteData? _) {},
+      );
+}
+
+class _StubCallback implements CriticalErrorCallback {
+  final errors = <PlatformException>[];
 
   @override
-  void onTokenInvalid() {}
+  void onCriticalError(PlatformException error) => errors.add(error);
 }

@@ -8,13 +8,16 @@ import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
+import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
 
 /// An implementation of [ZingSdkInitializerPlatform] that uses method channels.
 class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
-  MethodChannelZingSdkInitializer();
+  MethodChannelZingSdkInitializer() {
+    criticalErrorChannel.setMethodCallHandler(_handleCriticalErrorCall);
+  }
 
   /// The method channel used to interact with the native platform.
   @visibleForTesting
@@ -25,31 +28,19 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   final authStateEventChannel =
       const EventChannel('zing_sdk_initializer/auth_state');
 
-  /// Reverse method channel for native-to-Dart token callbacks.
+  /// Method channel for native-to-Dart critical error callbacks.
   @visibleForTesting
-  final authTokenCallbackChannel =
-      const MethodChannel('zing_sdk_initializer/auth_token_callback');
+  final criticalErrorChannel =
+      const MethodChannel('zing_sdk_initializer/critical_error_handler');
 
-  AuthTokenCallback? _authTokenCallback;
+  CriticalErrorCallback? _criticalErrorCallback;
 
   @override
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) {
     final args = <String, dynamic>{};
-    switch (authentication) {
-      case SdkPlatformApiKeyAuth(:final ios, :final android):
-        final apiKey =
-            defaultTargetPlatform == TargetPlatform.iOS ? ios : android;
-        args['type'] = 'apiKey';
-        args['apiKey'] = apiKey;
-      case SdkExternalTokenAuth(:final callback):
-        _authTokenCallback = callback;
-        _setupAuthTokenCallbackHandler();
-        args['type'] = 'externalToken';
-    }
 
     if (configuration != null) {
       args['configuration'] = configuration.toMap();
@@ -84,8 +75,23 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   }
 
   @override
-  Future<void> login() {
-    return methodChannel.invokeMethod<void>('login');
+  Future<void> login(SdkAuthentication authentication) {
+    final args = <String, dynamic>{};
+    switch (authentication) {
+      case SdkPlatformApiKeyAuth(:final ios, :final android, :final partnerUserId):
+        final apiKey =
+            defaultTargetPlatform == TargetPlatform.iOS ? ios : android;
+        args['type'] = 'apiKey';
+        args['apiKey'] = apiKey;
+        if (partnerUserId != null) {
+          args['partnerUserId'] = partnerUserId;
+        }
+      case SdkExternalTokenAuth(:final jwtToken):
+        args['type'] = 'externalToken';
+        args['jwtToken'] = jwtToken;
+    }
+
+    return methodChannel.invokeMethod<void>('login', args);
   }
 
   @override
@@ -103,6 +109,24 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
     return methodChannel.invokeMethod<void>('setProfileParams', params.toMap());
   }
 
+  @override
+  void setCriticalErrorCallback(CriticalErrorCallback? callback) {
+    _criticalErrorCallback = callback;
+  }
+
+  Future<void> _handleCriticalErrorCall(MethodCall call) async {
+    final callback = _criticalErrorCallback;
+    if (callback == null) return;
+
+    if (call.method == 'onCriticalError') {
+      final args = Map<String, dynamic>.from(call.arguments as Map);
+      callback.onCriticalError(PlatformException(
+        code: args['code'] as String,
+        message: args['message'] as String?,
+      ));
+    }
+  }
+
   Stream<SdkAuthState>? _authStateStream;
 
   @override
@@ -111,23 +135,6 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
         authStateEventChannel.receiveBroadcastStream().map((event) {
       return SdkAuthState.fromMap(Map<String, dynamic>.from(event as Map));
     }).asBroadcastStream();
-  }
-
-  void _setupAuthTokenCallbackHandler() {
-    authTokenCallbackChannel.setMethodCallHandler((call) async {
-      final callback = _authTokenCallback;
-      if (callback == null) return null;
-
-      switch (call.method) {
-        case 'getAuthToken':
-          return await callback.getAuthToken();
-        case 'onTokenInvalid':
-          callback.onTokenInvalid();
-          return null;
-        default:
-          return null;
-      }
-    });
   }
 }
 

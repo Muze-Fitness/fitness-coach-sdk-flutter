@@ -2,6 +2,7 @@ import 'profile_params.dart';
 import 'sdk_auth_state.dart';
 import 'sdk_authentication.dart';
 import 'sdk_configuration.dart';
+import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
@@ -10,6 +11,7 @@ export 'profile_params.dart';
 export 'sdk_auth_state.dart';
 export 'sdk_authentication.dart';
 export 'sdk_configuration.dart';
+export 'sdk_critical_error.dart';
 export 'sdk_theme.dart';
 export 'starting_route.dart';
 
@@ -19,15 +21,12 @@ class ZingSdk {
 
   static final ZingSdk instance = ZingSdk._();
 
-  /// Initializes the native SDK with the given authentication and optional
-  /// [configuration] and [theme].
+  /// Initializes the native SDK with optional [configuration] and [theme].
   Future<void> init({
-    required SdkAuthentication authentication,
     SdkConfiguration? configuration,
     SdkTheme? theme,
   }) {
     return ZingSdkInitializerPlatform.instance.init(
-      authentication: authentication,
       configuration: configuration,
       theme: theme,
     );
@@ -44,9 +43,9 @@ class ZingSdk {
     return ZingSdkInitializerPlatform.instance.registerBackgroundSetup(setup);
   }
 
-  /// Triggers the login flow in the native SDK.
-  Future<void> login() {
-    return ZingSdkInitializerPlatform.instance.login();
+  /// Authenticates and starts a session using [authentication].
+  Future<void> login(SdkAuthentication authentication) {
+    return ZingSdkInitializerPlatform.instance.login(authentication);
   }
 
   /// Logs out from the native SDK.
@@ -67,5 +66,10 @@ class ZingSdk {
   /// Stream of authentication state changes from the native SDK.
   Stream<SdkAuthState> get authState {
     return ZingSdkInitializerPlatform.instance.authStateStream;
+  }
+
+  /// Registers [callback] to receive critical SDK errors.
+  set criticalErrorCallback(CriticalErrorCallback? callback) {
+    ZingSdkInitializerPlatform.instance.setCriticalErrorCallback(callback);
   }
 }
