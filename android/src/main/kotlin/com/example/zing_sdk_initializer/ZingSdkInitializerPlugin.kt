@@ -76,6 +76,11 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         criticalErrorChannel = MethodChannel(binding.binaryMessenger, CRITICAL_ERROR_CHANNEL_NAME)
         ZingSdk.criticalErrorHandler = CriticalErrorHandler(criticalErrorChannel, scope)
+
+        binding.platformViewRegistry.registerViewFactory(
+            ZingSdkHomeViewFactory.VIEW_TYPE,
+            ZingSdkHomeViewFactory(binding.binaryMessenger),
+        )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

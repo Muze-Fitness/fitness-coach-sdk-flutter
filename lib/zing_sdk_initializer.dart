@@ -14,6 +14,7 @@ export 'sdk_configuration.dart';
 export 'sdk_critical_error.dart';
 export 'sdk_theme.dart';
 export 'starting_route.dart';
+export 'zing_sdk_home_view.dart';
 
 /// Public API for initializing and interacting with the native Zing SDK.
 class ZingSdk {

@@ -1,12 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 
-const _apiKeyIos = 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf';
-const _apiKeyAndroid = 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S';
+import 'home_tab.dart';
+import 'settings_tab.dart';
 
 /// SDK setup used both on app startup (foreground) and in the headless background
 /// isolate (Health Connect background sync). Must be a top-level function annotated
@@ -60,249 +58,61 @@ class ExampleApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: RootPage(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+/// Tab shell of the example app: `Settings` holds the SDK controls, `Home`
+/// hosts the SDK's `ZingSdkHomeScreen` compose view.
+class RootPage extends StatefulWidget {
+  const RootPage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<RootPage> createState() => _RootPageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  final _sdk = ZingSdk.instance;
-  String? _error;
-  SdkAuthState? _authState;
-  StreamSubscription<SdkAuthState>? _authStateSub;
-  String? _partnerUserId;
-
-  static const _routes = <(String, StartingRoute)>[
-    ('Home', HomeRoute()),
-    ('Custom Workout', CustomWorkoutRoute()),
-    ('AI Assistant', AiAssistantRoute()),
-    ('Workout Plan Details', WorkoutPlanDetailsRoute()),
-    ('Full Schedule', FullScheduleRoute()),
-    ('Profile Settings', ProfileSettingsRoute()),
-    ('Body Scan', BodyScanRoute()),
-    ('Flexibility Test', FlexibilityTestRoute()),
-    ('Fitness Test', FitnessTestRoute())
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _authStateSub = _sdk.authState.listen(
-      (state) => setState(() => _authState = state),
-      onError: (Object error) => setState(() => _error = error.toString()),
-    );
-  }
-
-  @override
-  void dispose() {
-    _authStateSub?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _loginOrLogout() async {
-    setState(() => _error = null);
-    try {
-      final state = _authState;
-      if (state is SdkAuthStateAuthenticated) {
-        await _sdk.logout();
-      } else if (state is! SdkAuthStateInProgress) {
-        await _sdk.login(
-          SdkAuthentication.apiKey(
-            ios: _apiKeyIos,
-            android: _apiKeyAndroid,
-            partnerUserId: _partnerUserId,
-          ),
-        );
-      }
-    } on PlatformException catch (e) {
-      setState(() => _error = '${e.code}: ${e.message}');
-    }
-  }
-
-  Future<void> _setProfileParams() async {
-    setState(() => _error = null);
-    try {
-      await _sdk.setProfileParams(
-        const ProfileParams(
-          name: 'Username',
-          gender: UserGender.male,
-          height: 178.9,
-          weight: 67.8,
-          age: 23,
-          measurementSystem: MeasurementSystem.metric,
+class _RootPageState extends State<RootPage> {
+  // `ZingSdkHomeScreen` draws its own header and expects the full viewport, so the
+  // Home tab runs without an app bar; the bottom navigation bar is fine to keep.
+  static const _tabs =
+      <({String label, IconData icon, Widget page, bool hasAppBar})>[
+        (
+          label: 'Settings',
+          icon: Icons.settings_outlined,
+          page: SettingsTab(),
+          hasAppBar: true,
         ),
-      );
-    } on PlatformException catch (e) {
-      setState(() => _error = '${e.code}: ${e.message}');
-    }
-  }
+        (
+          label: 'Home',
+          icon: Icons.home_outlined,
+          page: HomeTab(),
+          hasAppBar: false,
+        ),
+      ];
 
-  Future<void> _showSetPartnerIdDialog() async {
-    final result = await showDialog<String>(
-      context: context,
-      builder: (_) => _SetPartnerIdDialog(initialValue: _partnerUserId),
-    );
-
-    if (result == null || !mounted) return;
-    setState(() {
-      _partnerUserId = result.trim().isEmpty ? null : result.trim();
-    });
-  }
-
-  Future<void> _openScreen(StartingRoute route) async {
-    setState(() => _error = null);
-    try {
-      await _sdk.openScreen(route);
-    } on PlatformException catch (e) {
-      setState(() => _error = '${e.code}: ${e.message}');
-    }
-  }
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Zing SDK Example')),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: FilledButton(
-                onPressed: _authState is SdkAuthStateInProgress
-                    ? null
-                    : _loginOrLogout,
-                child: Text(
-                  switch (_authState) {
-                    SdkAuthStateAuthenticated() => 'Logout',
-                    SdkAuthStateInProgress() => 'In Progress...',
-                    _ => 'Login',
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: FilledButton.tonal(
-                onPressed: _authState is SdkAuthStateAuthenticated
-                    ? _setProfileParams
-                    : null,
-                child: const Text('Set Profile Params'),
-              ),
-            ),
-            if (_authState is SdkAuthStateLoggedOut) ...[
-              const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: OutlinedButton(
-                  onPressed: _showSetPartnerIdDialog,
-                  child: Text(
-                    _partnerUserId == null
-                        ? 'Set Partner ID'
-                        : 'Partner ID: $_partnerUserId',
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                'Auth state: ${switch (_authState) {
-                  SdkAuthStateAuthenticated() => 'Authenticated',
-                  SdkAuthStateInProgress() => 'In progress',
-                  SdkAuthStateLoggedOut() => 'Logged out',
-                  null => 'Unknown',
-                }}',
-              ),
-            ),
-            if (_authState case SdkAuthStateAuthenticated(:final userId)) ...[
-              const SizedBox(height: 4),
-              Center(
-                child: InkWell(
-                  onTap: () async {
-                    await Clipboard.setData(ClipboardData(text: userId));
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('User ID copied')),
-                    );
-                  },
-                  child: Text('User ID: $userId'),
-                ),
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ],
-            const SizedBox(height: 48),
-            for (final (label, route) in _routes) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: OutlinedButton(
-                  onPressed: () => _openScreen(route),
-                  child: Text(label),
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ],
-        ),
+      appBar: _tabs[_index].hasAppBar
+          ? AppBar(title: Text(_tabs[_index].label))
+          : null,
+      // IndexedStack keeps each tab alive so switching tabs does not tear down
+      // the SDK view or lose the auth state subscription.
+      body: IndexedStack(
+        index: _index,
+        children: [for (final tab in _tabs) tab.page],
       ),
-    );
-  }
-}
-
-class _SetPartnerIdDialog extends StatefulWidget {
-  const _SetPartnerIdDialog({required this.initialValue});
-
-  final String? initialValue;
-
-  @override
-  State<_SetPartnerIdDialog> createState() => _SetPartnerIdDialogState();
-}
-
-class _SetPartnerIdDialogState extends State<_SetPartnerIdDialog> {
-  late final _controller = TextEditingController(text: widget.initialValue);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Set Partner ID'),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        decoration: const InputDecoration(hintText: 'partnerUserId'),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (index) => setState(() => _index = index),
+        destinations: [
+          for (final tab in _tabs)
+            NavigationDestination(icon: Icon(tab.icon), label: tab.label),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: const Text('Setup'),
-        ),
-      ],
     );
   }
 }
