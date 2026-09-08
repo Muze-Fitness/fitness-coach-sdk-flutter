@@ -79,3 +79,10 @@ class FitnessTestRoute extends StartingRoute {
   @override
   String get routeId => 'fitness_test';
 }
+
+class OnboardingRoute extends StartingRoute {
+  const OnboardingRoute();
+
+  @override
+  String get routeId => 'onboarding';
+}

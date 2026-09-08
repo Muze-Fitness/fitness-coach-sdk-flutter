@@ -32,6 +32,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case bodyScan = "body_scan"
         case flexibilityTest = "flexibility_test"
         case fitnessTest = "fitness_test"
+        case onboarding = "onboarding"
     }
 
     enum PluginError: Error {
@@ -275,6 +276,8 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             try sdk.makeScreen(.flexibilityTest(useFrontCamera: true))
         case .fitnessTest:
             try sdk.makeScreen(.fitnessTest(useFrontCamera: true))
+        case .onboarding:
+            try sdk.makeScreen(.onboarding)
         }
     }
 

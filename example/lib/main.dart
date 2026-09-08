@@ -81,6 +81,7 @@ class _HomePageState extends State<HomePage> {
 
   static const _routes = <(String, StartingRoute)>[
     ('Home', HomeRoute()),
+    ('Onboarding', OnboardingRoute()),
     ('Custom Workout', CustomWorkoutRoute()),
     ('AI Assistant', AiAssistantRoute()),
     ('Workout Plan Details', WorkoutPlanDetailsRoute()),
