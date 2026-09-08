@@ -8,12 +8,14 @@ import 'starting_route.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
 
 export 'profile_params.dart';
+export 'program_screen_configuration.dart';
 export 'sdk_auth_state.dart';
 export 'sdk_authentication.dart';
 export 'sdk_configuration.dart';
 export 'sdk_critical_error.dart';
 export 'sdk_theme.dart';
 export 'starting_route.dart';
+export 'zing_program_view.dart';
 
 /// Public API for initializing and interacting with the native Zing SDK.
 class ZingSdk {

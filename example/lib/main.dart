@@ -165,6 +165,14 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  void _openSampleNavigation() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const SampleNavigationPage(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,6 +257,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
             const SizedBox(height: 48),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: OutlinedButton(
+                onPressed: _openSampleNavigation,
+                child: const Text('Sample Navigation'),
+              ),
+            ),
+            const SizedBox(height: 8),
             for (final (label, route) in _routes) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -261,6 +277,71 @@ class _HomePageState extends State<HomePage> {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class SampleNavigationPage extends StatefulWidget {
+  const SampleNavigationPage({super.key});
+
+  @override
+  State<SampleNavigationPage> createState() => _SampleNavigationPageState();
+}
+
+class _SampleNavigationPageState extends State<SampleNavigationPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _tabController.index,
+        children: const [
+          ZingProgramView(
+            configuration: ProgramScreenConfiguration(showCloseButton: false),
+          ),
+          _SampleTab(),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Program'),
+            Tab(text: 'Sample'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SampleTab extends StatelessWidget {
+  const _SampleTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: FilledButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Close'),
       ),
     );
   }
