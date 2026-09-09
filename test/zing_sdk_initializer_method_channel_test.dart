@@ -158,6 +158,16 @@ void main() {
     );
   });
 
+  test('openScreen forwards onboarding route', () async {
+    await platform.openScreen(const OnboardingRoute());
+
+    expect(capturedCall?.method, 'openScreen');
+    expect(
+      capturedCall?.arguments,
+      equals({'route': 'onboarding'}),
+    );
+  });
+
   test('native critical error reaches the registered callback', () async {
     final callback = _StubCallback();
     platform.setCriticalErrorCallback(callback);

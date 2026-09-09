@@ -32,6 +32,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case bodyScan = "body_scan"
         case flexibilityTest = "flexibility_test"
         case fitnessTest = "fitness_test"
+        case onboarding = "onboarding"
     }
 
     enum PluginError: Error {
@@ -63,7 +64,20 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             binaryMessenger: registrar.messenger()
         )
 
+        registrar.register(
+            ZingProgramViewFactory(plugin: instance),
+            withId: ZingProgramViewFactory.viewType
+        )
+
         registrar.addMethodCallDelegate(instance, channel: initializerChannel)
+    }
+
+    @MainActor
+    func makeProgramViewController(
+        configuration: ZingSDK.ProgramScreenConfiguration
+    ) throws -> UIViewController {
+        guard let sdk else { throw PluginError.notInitialized }
+        return try sdk.makeScreen(.program(configuration: configuration))
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -253,7 +267,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case .fullSchedule:
             try sdk.makeScreen(.fullSchedule)
         case .home:
-            try sdk.makeScreen(.program)
+            try sdk.makeScreen(.program(configuration: .init(showCloseButton: true)))
         case .profileSettings:
             try sdk.makeScreen(.profileSettings)
         case .bodyScan:
@@ -262,6 +276,8 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             try sdk.makeScreen(.flexibilityTest(useFrontCamera: true))
         case .fitnessTest:
             try sdk.makeScreen(.fitnessTest(useFrontCamera: true))
+        case .onboarding:
+            try sdk.makeScreen(.onboarding)
         }
     }
 

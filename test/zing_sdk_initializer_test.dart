@@ -172,6 +172,11 @@ void main() {
       expect(route.toMap(), {'route': 'custom_workout'});
     });
 
+    test('onboarding route serializes correctly', () {
+      const route = OnboardingRoute();
+      expect(route.toMap(), {'route': 'onboarding'});
+    });
+
   });
 
   group('SdkAuthState deserialization', () {

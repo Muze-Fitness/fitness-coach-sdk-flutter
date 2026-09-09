@@ -53,6 +53,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             const val BODY_SCAN = "body_scan"
             const val FLEXIBILITY_TEXT = "flexibility_test"
             const val FITNESS_TEST = "fitness_test"
+            const val ONBOARDING = "onboarding"
         }
     }
 
@@ -237,6 +238,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             RouteKeys.BODY_SCAN -> StartingRoute.BodyScan
             RouteKeys.FLEXIBILITY_TEXT -> StartingRoute.FlexibilityTest
             RouteKeys.FITNESS_TEST -> StartingRoute.FitnessTest
+            RouteKeys.ONBOARDING -> StartingRoute.Onboarding
             else -> null
         }
 
