@@ -4,9 +4,6 @@ import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 import 'home_tab.dart';
 import 'settings_tab.dart';
 
-const apiKeyIos = 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf';
-const apiKeyAndroid = 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S';
-
 /// SDK setup used both on app startup (foreground) and in the headless background
 /// isolate (Health Connect background sync). Must be a top-level function annotated
 /// with `@pragma('vm:entry-point')` so it survives tree-shaking and can be looked up

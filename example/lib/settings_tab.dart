@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 
-import 'api_keys.dart';
+const apiKeyIos = 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf';
+const apiKeyAndroid = 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
