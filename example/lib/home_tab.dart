@@ -35,8 +35,8 @@ class _HomeTabState extends State<HomeTab> {
       return const _LoginRequired();
     }
 
-    return const ZingProgramView(
-      configuration: ProgramScreenConfiguration(showCloseButton: false),
+    return const ZingHomeView(
+      configuration: HomeScreenConfiguration(showCloseButton: false),
     );
   }
 }

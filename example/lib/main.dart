@@ -69,7 +69,7 @@ class RootPage extends StatefulWidget {
 }
 
 class _RootPageState extends State<RootPage> {
-  // ZingProgramView draws its own header and expects the full viewport, so the
+  // ZingHomeView draws its own header and expects the full viewport, so the
   // Home tab runs without an app bar; the bottom navigation bar is fine to keep.
   static const _tabs =
       <({String label, IconData icon, Widget page, bool hasAppBar})>[

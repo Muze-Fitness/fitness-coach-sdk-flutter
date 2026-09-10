@@ -4,7 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'program_screen_configuration.dart';
+import '../home_screen_configuration.dart';
 import 'zing_sdk_handled_insets.dart';
 
 class ZingHomeAndroidView extends StatefulWidget {
@@ -13,7 +13,7 @@ class ZingHomeAndroidView extends StatefulWidget {
     required this.configuration,
   });
 
-  final ProgramScreenConfiguration configuration;
+  final HomeScreenConfiguration configuration;
 
   @override
   State<ZingHomeAndroidView> createState() => _ZingHomeAndroidViewState();

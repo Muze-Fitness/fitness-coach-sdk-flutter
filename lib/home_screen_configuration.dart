@@ -1,6 +1,6 @@
-/// Options for the native program screen (`ZingSDK.ProgramScreenConfiguration`).
-class ProgramScreenConfiguration {
-  const ProgramScreenConfiguration({
+/// Options for the native home screen.
+class HomeScreenConfiguration {
+  const HomeScreenConfiguration({
     required this.showCloseButton,
     this.showAskCoachButton = true,
   });

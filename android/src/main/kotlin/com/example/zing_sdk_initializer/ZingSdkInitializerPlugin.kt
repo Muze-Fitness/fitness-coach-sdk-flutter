@@ -15,6 +15,7 @@ import coach.zing.fitness.coach.UserGender
 import coach.zing.fitness.coach.ZingSdk
 import coach.zing.fitness.coach.ZingSdkActivity
 import coach.zing.fitness.coach.ZingSdkTheme
+import com.example.zing_sdk_initializer.embedded.ZingSdkHomeViewFactory
 import com.example.zing_sdk_initializer.engine.ZingBackgroundPrefs
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware

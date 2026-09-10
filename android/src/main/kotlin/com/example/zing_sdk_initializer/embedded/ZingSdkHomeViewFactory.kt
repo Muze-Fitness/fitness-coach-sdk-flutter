@@ -1,4 +1,4 @@
-package com.example.zing_sdk_initializer
+package com.example.zing_sdk_initializer.embedded
 
 import android.content.Context
 import android.view.View

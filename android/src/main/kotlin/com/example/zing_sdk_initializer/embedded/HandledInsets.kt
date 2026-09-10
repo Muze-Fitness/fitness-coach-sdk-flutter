@@ -1,4 +1,4 @@
-package com.example.zing_sdk_initializer
+package com.example.zing_sdk_initializer.embedded
 
 import coach.zing.fitness.coach.embedded.ZingSdkEmbeddedView
 

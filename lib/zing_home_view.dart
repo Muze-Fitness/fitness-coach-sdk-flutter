@@ -2,16 +2,16 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'program_screen_configuration.dart';
-import 'zing_home_android_view.dart';
+import 'home_screen_configuration.dart';
+import 'embedded_android/zing_home_android_view.dart';
 
-class ZingProgramView extends StatelessWidget {
-  const ZingProgramView({
+class ZingHomeView extends StatelessWidget {
+  const ZingHomeView({
     super.key,
     required this.configuration,
   });
 
-  final ProgramScreenConfiguration configuration;
+  final HomeScreenConfiguration configuration;
 
   @override
   Widget build(BuildContext context) {
