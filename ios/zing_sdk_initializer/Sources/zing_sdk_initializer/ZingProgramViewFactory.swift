@@ -72,7 +72,7 @@ final class ZingProgramPlatformView: NSObject, FlutterPlatformView {
     }
 }
 
-private extension ZingSDK.ProgramScreenConfiguration {
+extension ZingSDK.ProgramScreenConfiguration {
     init(arguments: Any?) {
         let args = arguments as? [String: Any] ?? [:]
         self.init(

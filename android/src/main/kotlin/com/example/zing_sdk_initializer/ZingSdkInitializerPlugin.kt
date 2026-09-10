@@ -15,6 +15,7 @@ import coach.zing.fitness.coach.UserGender
 import coach.zing.fitness.coach.ZingSdk
 import coach.zing.fitness.coach.ZingSdkActivity
 import coach.zing.fitness.coach.ZingSdkTheme
+import coach.zing.fitness.coach.embedded.home.HomeScreenConfig
 import com.example.zing_sdk_initializer.embedded.ZingSdkHomeViewFactory
 import com.example.zing_sdk_initializer.engine.ZingBackgroundPrefs
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -43,6 +44,8 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private const val METHOD_SET_PROFILE_PARAMS = "setProfileParams"
         private const val METHOD_REGISTER_BACKGROUND_SETUP = "registerBackgroundSetup"
         private const val ARG_ROUTE = "route"
+        private const val ARG_SHOW_CLOSE_BUTTON = "showCloseButton"
+        private const val ARG_SHOW_ASK_COACH_BUTTON = "showAskCoachButton"
 
         private object RouteKeys {
             const val HOME = "home"
@@ -235,7 +238,12 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         val startingRoute = when (routeKey) {
-            RouteKeys.HOME -> StartingRoute.Home()
+            RouteKeys.HOME -> StartingRoute.Home(
+                HomeScreenConfig(
+                    backButtonIsVisible = call.argument<Boolean>(ARG_SHOW_CLOSE_BUTTON) ?: true,
+                    askCoachIsVisible = call.argument<Boolean>(ARG_SHOW_ASK_COACH_BUTTON) ?: true,
+                )
+            )
             RouteKeys.CUSTOM_WORKOUT -> StartingRoute.CustomWorkout
             RouteKeys.AI_ASSISTANT -> StartingRoute.AiAssistant
             RouteKeys.WORKOUT_PLAN_DETAILS -> StartingRoute.WorkoutPlanDetails
@@ -244,7 +252,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             RouteKeys.BODY_SCAN -> StartingRoute.BodyScan
             RouteKeys.FLEXIBILITY_TEXT -> StartingRoute.FlexibilityTest
             RouteKeys.FITNESS_TEST -> StartingRoute.FitnessTest
-            RouteKeys.ONBOARDING -> StartingRoute.Onboarding()
+            RouteKeys.ONBOARDING -> StartingRoute.Onboarding(navigateToHome = false)
             else -> null
         }
 

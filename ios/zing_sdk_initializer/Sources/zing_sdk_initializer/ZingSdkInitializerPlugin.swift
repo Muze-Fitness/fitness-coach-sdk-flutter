@@ -222,7 +222,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         }
         Task { @MainActor in
             do {
-                let viewController = try makeViewController(for: route, sdk: sdk)
+                let viewController = try makeViewController(for: route, arguments: args, sdk: sdk)
                 presentViewController(viewController, completion: completion)
             } catch {
                 completion(error.toFlutter())
@@ -255,6 +255,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
     @MainActor
     private func makeViewController(
         for route: Route,
+        arguments: [String: Any],
         sdk: ZingSDK
     ) throws(ZingSDK.ScreenPresentationError) -> UIViewController {
         switch route {
@@ -267,7 +268,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case .fullSchedule:
             try sdk.makeScreen(.fullSchedule)
         case .home:
-            try sdk.makeScreen(.program(configuration: .init(showCloseButton: true)))
+            try sdk.makeScreen(.program(configuration: .init(arguments: arguments)))
         case .profileSettings:
             try sdk.makeScreen(.profileSettings)
         case .bodyScan:
