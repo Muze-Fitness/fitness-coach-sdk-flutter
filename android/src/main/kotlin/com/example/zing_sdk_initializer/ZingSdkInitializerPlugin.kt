@@ -15,6 +15,8 @@ import coach.zing.fitness.coach.UserGender
 import coach.zing.fitness.coach.ZingSdk
 import coach.zing.fitness.coach.ZingSdkActivity
 import coach.zing.fitness.coach.ZingSdkTheme
+import coach.zing.fitness.coach.embedded.home.HomeScreenConfig
+import com.example.zing_sdk_initializer.embedded.ZingSdkHomeViewFactory
 import com.example.zing_sdk_initializer.engine.ZingBackgroundPrefs
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -42,6 +44,8 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private const val METHOD_SET_PROFILE_PARAMS = "setProfileParams"
         private const val METHOD_REGISTER_BACKGROUND_SETUP = "registerBackgroundSetup"
         private const val ARG_ROUTE = "route"
+        private const val ARG_SHOW_CLOSE_BUTTON = "showCloseButton"
+        private const val ARG_SHOW_ASK_COACH_BUTTON = "showAskCoachButton"
 
         private object RouteKeys {
             const val HOME = "home"
@@ -53,6 +57,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             const val BODY_SCAN = "body_scan"
             const val FLEXIBILITY_TEXT = "flexibility_test"
             const val FITNESS_TEST = "fitness_test"
+            const val ONBOARDING = "onboarding"
         }
     }
 
@@ -76,6 +81,11 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         criticalErrorChannel = MethodChannel(binding.binaryMessenger, CRITICAL_ERROR_CHANNEL_NAME)
         ZingSdk.criticalErrorHandler = CriticalErrorHandler(criticalErrorChannel, scope)
+
+        binding.platformViewRegistry.registerViewFactory(
+            ZingSdkHomeViewFactory.VIEW_TYPE,
+            ZingSdkHomeViewFactory(binding.binaryMessenger),
+        )
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -228,7 +238,12 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         val startingRoute = when (routeKey) {
-            RouteKeys.HOME -> StartingRoute.Home
+            RouteKeys.HOME -> StartingRoute.Home(
+                HomeScreenConfig(
+                    backButtonIsVisible = call.argument<Boolean>(ARG_SHOW_CLOSE_BUTTON) ?: true,
+                    askCoachIsVisible = call.argument<Boolean>(ARG_SHOW_ASK_COACH_BUTTON) ?: true,
+                )
+            )
             RouteKeys.CUSTOM_WORKOUT -> StartingRoute.CustomWorkout
             RouteKeys.AI_ASSISTANT -> StartingRoute.AiAssistant
             RouteKeys.WORKOUT_PLAN_DETAILS -> StartingRoute.WorkoutPlanDetails
@@ -237,6 +252,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             RouteKeys.BODY_SCAN -> StartingRoute.BodyScan
             RouteKeys.FLEXIBILITY_TEXT -> StartingRoute.FlexibilityTest
             RouteKeys.FITNESS_TEST -> StartingRoute.FitnessTest
+            RouteKeys.ONBOARDING -> StartingRoute.Onboarding(navigateToHome = false)
             else -> null
         }
 
@@ -368,7 +384,6 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
 
         val planBackground = drawable("zing_plan_background")
-        val welcomePicture = drawable("zing_welcome_picture")
         val coachAsset = ZingSdkTheme.Assets.CoachAsset(
             john = drawable("zing_coach_john"),
             jennifer = drawable("zing_coach_jennifer"),
@@ -378,10 +393,9 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         val hasCoach = coachAsset.john != null || coachAsset.jennifer != null ||
                 coachAsset.sarah != null || coachAsset.chris != null
 
-        if (planBackground == null && welcomePicture == null && !hasCoach) return null
+        if (planBackground == null && !hasCoach) return null
         return ZingSdkTheme.Assets(
             planBackground = planBackground,
-            welcomePicture = welcomePicture,
             coachImages = if (hasCoach) coachAsset else null,
         )
     }

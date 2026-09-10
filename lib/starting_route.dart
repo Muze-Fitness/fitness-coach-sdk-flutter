@@ -1,3 +1,5 @@
+import 'home_screen_configuration.dart';
+
 /// A destination screen that can be launched inside the native Zing SDK.
 sealed class StartingRoute {
   const StartingRoute();
@@ -6,10 +8,10 @@ sealed class StartingRoute {
   String get routeId;
 
   /// Optional arguments for parameterized routes.
-  Map<String, String>? get routeArgs => null;
+  Map<String, Object?>? get routeArgs => null;
 
   /// Serializes to the map sent over the method channel.
-  Map<String, String> toMap() {
+  Map<String, Object?> toMap() {
     return {
       'route': routeId,
       if (routeArgs != null) ...routeArgs!,
@@ -46,10 +48,18 @@ class FullScheduleRoute extends StartingRoute {
 }
 
 class HomeRoute extends StartingRoute {
-  const HomeRoute();
+  const HomeRoute({
+    this.configuration = const HomeScreenConfiguration(showCloseButton: true),
+  });
+
+  /// Options applied to the launched home screen.
+  final HomeScreenConfiguration configuration;
 
   @override
   String get routeId => 'home';
+
+  @override
+  Map<String, Object?> get routeArgs => configuration.toMap();
 }
 
 class ProfileSettingsRoute extends StartingRoute {
@@ -78,4 +88,11 @@ class FitnessTestRoute extends StartingRoute {
 
   @override
   String get routeId => 'fitness_test';
+}
+
+class OnboardingRoute extends StartingRoute {
+  const OnboardingRoute();
+
+  @override
+  String get routeId => 'onboarding';
 }

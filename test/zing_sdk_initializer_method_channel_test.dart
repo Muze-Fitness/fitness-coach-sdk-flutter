@@ -158,6 +158,37 @@ void main() {
     );
   });
 
+  test('openScreen forwards onboarding route', () async {
+    await platform.openScreen(const OnboardingRoute());
+
+    expect(capturedCall?.method, 'openScreen');
+    expect(
+      capturedCall?.arguments,
+      equals({'route': 'onboarding'}),
+    );
+  });
+
+  test('openScreen forwards home route configuration', () async {
+    await platform.openScreen(
+      const HomeRoute(
+        configuration: HomeScreenConfiguration(
+          showCloseButton: false,
+          showAskCoachButton: false,
+        ),
+      ),
+    );
+
+    expect(capturedCall?.method, 'openScreen');
+    expect(
+      capturedCall?.arguments,
+      equals({
+        'route': 'home',
+        'showCloseButton': false,
+        'showAskCoachButton': false,
+      }),
+    );
+  });
+
   test('native critical error reaches the registered callback', () async {
     final callback = _StubCallback();
     platform.setCriticalErrorCallback(callback);

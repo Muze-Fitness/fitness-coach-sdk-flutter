@@ -172,6 +172,34 @@ void main() {
       expect(route.toMap(), {'route': 'custom_workout'});
     });
 
+    test('onboarding route serializes correctly', () {
+      const route = OnboardingRoute();
+      expect(route.toMap(), {'route': 'onboarding'});
+    });
+
+    test('home route defaults to a visible close button', () {
+      const route = HomeRoute();
+      expect(route.toMap(), {
+        'route': 'home',
+        'showCloseButton': true,
+        'showAskCoachButton': true,
+      });
+    });
+
+    test('home route serializes its configuration', () {
+      const route = HomeRoute(
+        configuration: HomeScreenConfiguration(
+          showCloseButton: false,
+          showAskCoachButton: false,
+        ),
+      );
+      expect(route.toMap(), {
+        'route': 'home',
+        'showCloseButton': false,
+        'showAskCoachButton': false,
+      });
+    });
+
   });
 
   group('SdkAuthState deserialization', () {
