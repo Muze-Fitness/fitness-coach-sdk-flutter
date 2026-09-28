@@ -338,11 +338,6 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         )
     }
 
-    // Only the current, non-deprecated semantic tokens are mapped here — the Dart SdkColors
-    // list also carries a handful of legacy iOS-only fields (e.g. buttonLightYellow,
-    // textBodyLightPrimary) that have no slot in the native Android ZingSdkTheme.Colors and are
-    // intentionally left unread: Android already exposes only the current token set publicly, so
-    // those keys are simply never looked up and stay unused in colorsMap.
     @Suppress("UNCHECKED_CAST")
     private fun buildColors(themeMap: Map<String, Any>): ZingSdkTheme.Colors? {
         val colorsMap = themeMap["colors"] as? Map<String, Any> ?: return null
