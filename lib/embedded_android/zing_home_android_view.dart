@@ -41,7 +41,8 @@ class _ZingHomeAndroidViewState extends State<ZingHomeAndroidView> {
     final old = oldWidget.configuration;
     final current = widget.configuration;
     if (old.showCloseButton == current.showCloseButton &&
-        old.showAskCoachButton == current.showAskCoachButton) {
+        old.showAskCoachButton == current.showAskCoachButton &&
+        old.showBodyScanWidget == current.showBodyScanWidget) {
       return;
     }
     _channel?.invokeMethod<void>(_setConfig, _config());
@@ -50,6 +51,7 @@ class _ZingHomeAndroidViewState extends State<ZingHomeAndroidView> {
   Map<String, dynamic> _config() => <String, dynamic>{
         'backButtonIsVisible': widget.configuration.showCloseButton,
         'askCoachIsVisible': widget.configuration.showAskCoachButton,
+        'showBodyScanWidget': widget.configuration.showBodyScanWidget,
       };
 
   @override

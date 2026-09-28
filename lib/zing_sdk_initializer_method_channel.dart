@@ -115,6 +115,11 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   }
 
   @override
+  Future<void> setTheme(SdkTheme theme) {
+    return methodChannel.invokeMethod<void>('setTheme', theme.toMap());
+  }
+
+  @override
   void setCriticalErrorCallback(CriticalErrorCallback? callback) {
     _criticalErrorCallback = callback;
   }

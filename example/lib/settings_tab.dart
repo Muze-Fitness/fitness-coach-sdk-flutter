@@ -136,12 +136,7 @@ class _SettingsTabState extends State<SettingsTab> {
     final previous = _isDarkTheme;
     setState(() => _isDarkTheme = isDark);
     try {
-      // Re-init always needs the configuration too — omitting it resets the
-      // native SDK's configuration to null, not "leave it as-is".
-      await _sdk.init(
-        configuration: sdkConfiguration,
-        theme: isDark ? darkSdkTheme : lightSdkTheme,
-      );
+      await _sdk.setTheme(isDark ? darkSdkTheme : lightSdkTheme);
     } on PlatformException catch (e) {
       setState(() {
         _isDarkTheme = previous;

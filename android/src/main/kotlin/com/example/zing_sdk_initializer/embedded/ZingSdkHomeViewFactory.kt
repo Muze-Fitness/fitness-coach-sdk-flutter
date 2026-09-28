@@ -14,6 +14,7 @@ import io.flutter.plugin.platform.PlatformViewFactory
 private const val METHOD_SET_CONFIG = "setConfig"
 private const val ARG_BACK_BUTTON_IS_VISIBLE = "backButtonIsVisible"
 private const val ARG_ASK_COACH_IS_VISIBLE = "askCoachIsVisible"
+private const val ARG_SHOW_BODY_SCAN_WIDGET = "showBodyScanWidget"
 
 class ZingSdkHomeViewFactory(
     private val messenger: BinaryMessenger,
@@ -67,6 +68,7 @@ private class ZingSdkHomePlatformView(
     private fun configOf(config: Map<*, *>) = HomeScreenConfig(
         backButtonIsVisible = config[ARG_BACK_BUTTON_IS_VISIBLE] as? Boolean ?: false,
         askCoachIsVisible = config[ARG_ASK_COACH_IS_VISIBLE] as? Boolean ?: true,
+        bodyScanIsVisible = config[ARG_SHOW_BODY_SCAN_WIDGET] as? Boolean ?: true,
     )
 
     override fun getView(): View = homeView

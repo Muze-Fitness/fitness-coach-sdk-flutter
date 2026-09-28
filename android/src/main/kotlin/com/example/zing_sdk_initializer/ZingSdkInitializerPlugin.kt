@@ -43,9 +43,12 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private const val METHOD_OPEN_SCREEN = "openScreen"
         private const val METHOD_SET_PROFILE_PARAMS = "setProfileParams"
         private const val METHOD_REGISTER_BACKGROUND_SETUP = "registerBackgroundSetup"
+        private const val METHOD_SET_PRIMARY_LOCATION_ID = "setPrimaryLocationID"
+        private const val METHOD_SET_THEME = "setTheme"
         private const val ARG_ROUTE = "route"
         private const val ARG_SHOW_CLOSE_BUTTON = "showCloseButton"
         private const val ARG_SHOW_ASK_COACH_BUTTON = "showAskCoachButton"
+        private const val ARG_SHOW_BODY_SCAN_WIDGET = "showBodyScanWidget"
 
         private object RouteKeys {
             const val HOME = "home"
@@ -103,6 +106,8 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             METHOD_OPEN_SCREEN -> handleOpenScreen(call, result)
             METHOD_SET_PROFILE_PARAMS -> handleSetProfileParams(call, result)
             METHOD_REGISTER_BACKGROUND_SETUP -> handleRegisterBackgroundSetup(call, result)
+            METHOD_SET_PRIMARY_LOCATION_ID -> handleSetPrimaryLocationId(call, result)
+            METHOD_SET_THEME -> handleSetTheme(call, result)
             else -> result.notImplemented()
         }
     }
@@ -242,6 +247,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 HomeScreenConfig(
                     backButtonIsVisible = call.argument<Boolean>(ARG_SHOW_CLOSE_BUTTON) ?: true,
                     askCoachIsVisible = call.argument<Boolean>(ARG_SHOW_ASK_COACH_BUTTON) ?: true,
+                    bodyScanIsVisible = call.argument<Boolean>(ARG_SHOW_BODY_SCAN_WIDGET) ?: true,
                 )
             )
             RouteKeys.CUSTOM_WORKOUT -> StartingRoute.CustomWorkout
@@ -321,6 +327,41 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                     Log.getStackTraceString(throwable)
                 )
             }
+        }
+    }
+
+    private fun handleSetPrimaryLocationId(call: MethodCall, result: MethodChannel.Result) {
+        scope.launch {
+            runCatching {
+                val id = call.argument<String>("id")
+                    ?: throw IllegalArgumentException("id is required")
+                ZingSdk.setPrimaryLocationId(id)
+                result.success(null)
+            }.onFailure { throwable ->
+                Log.e(TAG, "Failed to set primary location ID", throwable)
+                result.error(
+                    "set_primary_location_id_failed",
+                    throwable.message,
+                    Log.getStackTraceString(throwable)
+                )
+            }
+        }
+    }
+
+    private fun handleSetTheme(call: MethodCall, result: MethodChannel.Result) {
+        runCatching {
+            // Writes ZingSdk's theme flow directly, unlike ZingSdk.init(), which
+            // also resets the current configuration and restores the session.
+            @Suppress("UNCHECKED_CAST")
+            ZingSdk.theme.value = buildTheme(call.arguments as? Map<String, Any>)
+            result.success(null)
+        }.onFailure { throwable ->
+            Log.e(TAG, "Failed to set theme", throwable)
+            result.error(
+                "set_theme_failed",
+                throwable.message,
+                Log.getStackTraceString(throwable)
+            )
         }
     }
 
