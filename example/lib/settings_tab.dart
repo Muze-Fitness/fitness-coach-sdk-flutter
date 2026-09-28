@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
@@ -87,6 +88,25 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
+  Future<void> _showSetPrimaryLocationDialog() async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => const _SetPrimaryLocationDialog(),
+    );
+    if (result == null || !mounted) return;
+
+    setState(() => _error = null);
+    try {
+      await _sdk.setPrimaryLocationId(result.trim());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Primary location ID updated')),
+      );
+    } on PlatformException catch (e) {
+      setState(() => _error = '${e.code}: ${e.message}');
+    }
+  }
+
   Future<void> _showSetPartnerIdDialog() async {
     final result = await showDialog<String>(
       context: context,
@@ -141,6 +161,17 @@ class _SettingsTabState extends State<SettingsTab> {
                 child: const Text('Set Profile Params'),
               ),
             ),
+            if (_authState is SdkAuthStateAuthenticated &&
+                defaultTargetPlatform == TargetPlatform.iOS) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: FilledButton.tonal(
+                  onPressed: _showSetPrimaryLocationDialog,
+                  child: const Text('Set Primary Location ID'),
+                ),
+              ),
+            ],
             if (_authState is SdkAuthStateLoggedOut) ...[
               const SizedBox(height: 8),
               Padding(
@@ -204,6 +235,46 @@ class _SettingsTabState extends State<SettingsTab> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SetPrimaryLocationDialog extends StatefulWidget {
+  const _SetPrimaryLocationDialog();
+
+  @override
+  State<_SetPrimaryLocationDialog> createState() =>
+      _SetPrimaryLocationDialogState();
+}
+
+class _SetPrimaryLocationDialogState extends State<_SetPrimaryLocationDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Set Primary Location ID'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(hintText: 'primaryLocationId'),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: const Text('Set'),
+        ),
+      ],
     );
   }
 }

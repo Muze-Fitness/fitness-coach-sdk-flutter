@@ -77,7 +77,8 @@ extension ZingSDK.ProgramScreenConfiguration {
         let args = arguments as? [String: Any] ?? [:]
         self.init(
             showCloseButton: args["showCloseButton"] as? Bool ?? false,
-            showAskCoachButton: args["showAskCoachButton"] as? Bool ?? true
+            showAskCoachButton: args["showAskCoachButton"] as? Bool ?? true,
+            showBodyScanWidget: args["showBodyScanWidget"] as? Bool ?? true
         )
     }
 }

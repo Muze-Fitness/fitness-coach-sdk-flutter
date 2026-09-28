@@ -18,10 +18,6 @@ Future<void> zingSdkSetup() async {
       healthBackgroundSync: true,
     ),
     theme: const SdkTheme(
-      colors: SdkColors(
-        brandPrimary: Color(0xFFF2001F),
-        brandSecondary: Color(0xFF980052),
-      ),
       cornersRounding: SdkCornerRounding(
         button: SdkRadius.value(0),
       ),
