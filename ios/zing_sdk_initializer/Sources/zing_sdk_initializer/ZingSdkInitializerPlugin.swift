@@ -20,6 +20,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         static let logout = "logout"
         static let openScreen = "openScreen"
         static let setProfileParams = "setProfileParams"
+        static let setPrimaryLocationID = "setPrimaryLocationID"
     }
 
     private enum Route: String {
@@ -92,6 +93,8 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             handleOpenScreen(method: call, result)
         case Method.setProfileParams:
             handleSetProfileParams(method: call, result)
+        case Method.setPrimaryLocationID:
+            handleSetPrimaryLocationID(method: call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -126,15 +129,17 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             configuration = ZingSDK.Configuration()
         }
 
-        let theme = (args["theme"] as? [String: Any]).map { FlutterTheme(arguments: $0).build() }
+        let themeArguments = args["theme"] as? [String: Any]
         let parameters = ZingSDK.InitializationParameters(
-            theme: theme,
             configuration: configuration
         )
 
         Task { @MainActor in
             do {
                 let sdkInstance = try await ZingSDK.initialize(with: parameters)
+                if let themeArguments {
+                    sdkInstance.theme = FlutterTheme(arguments: themeArguments).build()
+                }
                 self.sdk = sdkInstance
                 self.authStateChannel?.setStreamHandler(AuthStateStreamHandler(sdk: sdkInstance))
                 sdkInstance.criticalErrorHandler = self.criticalErrorChannel
@@ -249,6 +254,38 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             completion(nil)
         } catch {
             completion(error.toFlutter())
+        }
+    }
+
+    private func handleSetPrimaryLocationID(method: FlutterMethodCall, _ completion: @escaping FlutterResult) {
+        guard let sdk else {
+            completion(PluginError.notInitialized.toFlutter())
+            return
+        }
+        guard
+            let args = method.arguments as? [String: Any],
+            let id = args["id"] as? String
+        else {
+            completion(
+                FlutterError(
+                    code: "set_primary_location_id_failed",
+                    message: "Missing primary location id",
+                    details: nil
+                )
+            )
+            return
+        }
+        do {
+            try sdk.setPrimaryLocationID(id)
+            completion(nil)
+        } catch {
+            completion(
+                FlutterError(
+                    code: "set_primary_location_id_failed",
+                    message: String(describing: error),
+                    details: nil
+                )
+            )
         }
     }
 

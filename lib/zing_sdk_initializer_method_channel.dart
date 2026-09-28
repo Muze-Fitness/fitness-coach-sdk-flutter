@@ -110,6 +110,11 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   }
 
   @override
+  Future<void> setPrimaryLocationId(String id) {
+    return methodChannel.invokeMethod<void>('setPrimaryLocationID', {'id': id});
+  }
+
+  @override
   void setCriticalErrorCallback(CriticalErrorCallback? callback) {
     _criticalErrorCallback = callback;
   }

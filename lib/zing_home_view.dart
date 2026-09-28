@@ -19,6 +19,11 @@ class ZingHomeView extends StatelessWidget {
       return ZingHomeAndroidView(configuration: configuration);
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
       return UiKitView(
+        key: ValueKey(Object.hash(
+          configuration.showCloseButton,
+          configuration.showAskCoachButton,
+          configuration.showBodyScanWidget,
+        )),
         viewType: 'zing_sdk_initializer/program_view',
         creationParams: configuration.toMap(),
         creationParamsCodec: const StandardMessageCodec(),

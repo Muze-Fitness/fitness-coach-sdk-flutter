@@ -20,9 +20,11 @@ class _MockZingSdkInitializerPlatform
   int logoutCount = 0;
   int openScreenCount = 0;
   int setProfileParamsCount = 0;
+  int setPrimaryLocationIdCount = 0;
   SdkAuthentication? lastAuth;
   StartingRoute? lastRoute;
   ProfileParams? lastProfileParams;
+  String? lastPrimaryLocationId;
   CriticalErrorCallback? lastCriticalErrorCallback;
 
   final _authStateController = StreamController<SdkAuthState>.broadcast();
@@ -56,6 +58,12 @@ class _MockZingSdkInitializerPlatform
   Future<void> setProfileParams(ProfileParams params) async {
     setProfileParamsCount += 1;
     lastProfileParams = params;
+  }
+
+  @override
+  Future<void> setPrimaryLocationId(String id) async {
+    setPrimaryLocationIdCount += 1;
+    lastPrimaryLocationId = id;
   }
 
   @override
@@ -133,6 +141,13 @@ void main() {
       expect(mockPlatform.logoutCount, equals(1));
     });
 
+    test('setPrimaryLocationId delegates to platform', () async {
+      await ZingSdk.instance.setPrimaryLocationId('location-1');
+
+      expect(mockPlatform.setPrimaryLocationIdCount, equals(1));
+      expect(mockPlatform.lastPrimaryLocationId, 'location-1');
+    });
+
     test('openScreen delegates simple route', () async {
       await ZingSdk.instance.openScreen(const AiAssistantRoute());
 
@@ -183,6 +198,7 @@ void main() {
         'route': 'home',
         'showCloseButton': true,
         'showAskCoachButton': true,
+        'showBodyScanWidget': true,
       });
     });
 
@@ -191,12 +207,14 @@ void main() {
         configuration: HomeScreenConfiguration(
           showCloseButton: false,
           showAskCoachButton: false,
+          showBodyScanWidget: false,
         ),
       );
       expect(route.toMap(), {
         'route': 'home',
         'showCloseButton': false,
         'showAskCoachButton': false,
+        'showBodyScanWidget': false,
       });
     });
 
