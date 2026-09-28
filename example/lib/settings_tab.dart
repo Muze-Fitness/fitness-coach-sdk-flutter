@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 
+import 'main.dart';
+
 const apiKeyIos = 'yVbJzsVP.33rljbAHo9zm4zbyeOvc0dDV3bSSgDxf';
 const apiKeyAndroid = 'BFmIaLAC.7ACCWtEDJjxX5OxiYftMVOd0zHIW580S';
 
@@ -21,6 +23,7 @@ class _SettingsTabState extends State<SettingsTab> {
   SdkAuthState? _authState;
   StreamSubscription<SdkAuthState>? _authStateSub;
   String? _partnerUserId;
+  bool _isDarkTheme = false;
 
   static const _routes = <(String, StartingRoute)>[
     ('Home', HomeRoute()),
@@ -128,6 +131,25 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
+  Future<void> _toggleTheme(bool isDark) async {
+    setState(() => _error = null);
+    final previous = _isDarkTheme;
+    setState(() => _isDarkTheme = isDark);
+    try {
+      // Re-init always needs the configuration too — omitting it resets the
+      // native SDK's configuration to null, not "leave it as-is".
+      await _sdk.init(
+        configuration: sdkConfiguration,
+        theme: isDark ? darkSdkTheme : lightSdkTheme,
+      );
+    } on PlatformException catch (e) {
+      setState(() {
+        _isDarkTheme = previous;
+        _error = '${e.code}: ${e.message}';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -136,6 +158,16 @@ class _SettingsTabState extends State<SettingsTab> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Dark theme'),
+                value: _isDarkTheme,
+                onChanged: _toggleTheme,
+              ),
+            ),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: FilledButton(
