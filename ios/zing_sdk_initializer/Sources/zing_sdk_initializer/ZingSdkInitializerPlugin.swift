@@ -21,6 +21,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         static let openScreen = "openScreen"
         static let setProfileParams = "setProfileParams"
         static let setPrimaryLocationID = "setPrimaryLocationID"
+        static let setTheme = "setTheme"
     }
 
     private enum Route: String {
@@ -95,6 +96,8 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             handleSetProfileParams(method: call, result)
         case Method.setPrimaryLocationID:
             handleSetPrimaryLocationID(method: call, result)
+        case Method.setTheme:
+            handleSetTheme(method: call, result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -287,6 +290,16 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
                 )
             )
         }
+    }
+
+    private func handleSetTheme(method: FlutterMethodCall, _ completion: @escaping FlutterResult) {
+        guard let sdk else {
+            completion(PluginError.notInitialized.toFlutter())
+            return
+        }
+        let themeArguments = method.arguments as? [String: Any] ?? [:]
+        sdk.theme = FlutterTheme(arguments: themeArguments).build()
+        completion(nil)
     }
 
     @MainActor
