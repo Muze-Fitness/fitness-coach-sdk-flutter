@@ -43,9 +43,12 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private const val METHOD_OPEN_SCREEN = "openScreen"
         private const val METHOD_SET_PROFILE_PARAMS = "setProfileParams"
         private const val METHOD_REGISTER_BACKGROUND_SETUP = "registerBackgroundSetup"
+        private const val METHOD_SET_PRIMARY_LOCATION_ID = "setPrimaryLocationID"
+        private const val METHOD_SET_THEME = "setTheme"
         private const val ARG_ROUTE = "route"
         private const val ARG_SHOW_CLOSE_BUTTON = "showCloseButton"
         private const val ARG_SHOW_ASK_COACH_BUTTON = "showAskCoachButton"
+        private const val ARG_SHOW_BODY_SCAN_WIDGET = "showBodyScanWidget"
 
         private object RouteKeys {
             const val HOME = "home"
@@ -103,6 +106,8 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             METHOD_OPEN_SCREEN -> handleOpenScreen(call, result)
             METHOD_SET_PROFILE_PARAMS -> handleSetProfileParams(call, result)
             METHOD_REGISTER_BACKGROUND_SETUP -> handleRegisterBackgroundSetup(call, result)
+            METHOD_SET_PRIMARY_LOCATION_ID -> handleSetPrimaryLocationId(call, result)
+            METHOD_SET_THEME -> handleSetTheme(call, result)
             else -> result.notImplemented()
         }
     }
@@ -242,6 +247,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
                 HomeScreenConfig(
                     backButtonIsVisible = call.argument<Boolean>(ARG_SHOW_CLOSE_BUTTON) ?: true,
                     askCoachIsVisible = call.argument<Boolean>(ARG_SHOW_ASK_COACH_BUTTON) ?: true,
+                    bodyScanIsVisible = call.argument<Boolean>(ARG_SHOW_BODY_SCAN_WIDGET) ?: true,
                 )
             )
             RouteKeys.CUSTOM_WORKOUT -> StartingRoute.CustomWorkout
@@ -324,6 +330,41 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         }
     }
 
+    private fun handleSetPrimaryLocationId(call: MethodCall, result: MethodChannel.Result) {
+        scope.launch {
+            runCatching {
+                val id = call.argument<String>("id")
+                    ?: throw IllegalArgumentException("id is required")
+                ZingSdk.setPrimaryLocationId(id)
+                result.success(null)
+            }.onFailure { throwable ->
+                Log.e(TAG, "Failed to set primary location ID", throwable)
+                result.error(
+                    "set_primary_location_id_failed",
+                    throwable.message,
+                    Log.getStackTraceString(throwable)
+                )
+            }
+        }
+    }
+
+    private fun handleSetTheme(call: MethodCall, result: MethodChannel.Result) {
+        runCatching {
+            // Writes ZingSdk's theme flow directly, unlike ZingSdk.init(), which
+            // also resets the current configuration and restores the session.
+            @Suppress("UNCHECKED_CAST")
+            ZingSdk.theme.value = buildTheme(call.arguments as? Map<String, Any>)
+            result.success(null)
+        }.onFailure { throwable ->
+            Log.e(TAG, "Failed to set theme", throwable)
+            result.error(
+                "set_theme_failed",
+                throwable.message,
+                Log.getStackTraceString(throwable)
+            )
+        }
+    }
+
     private fun buildTheme(themeMap: Map<String, Any>?): ZingSdkTheme? {
         val colors = themeMap?.let { buildColors(it) }
         val typography = themeMap?.let { buildTypography(it) }
@@ -345,14 +386,36 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         return ZingSdkTheme.Colors(
             brandPrimary = color("brand/primary"),
             brandSecondary = color("brand/secondary"),
-            textHeadingDarkPrimary = color("text/heading/dark-primary"),
-            textHeadingLightPrimary = color("text/heading/light-primary"),
-            textBodyDarkPrimary = color("text/body/dark-primary"),
-            textBodyDarkSecondary = color("text/body/dark-secondary"),
-            buttonPrimary = color("button/primary"),
-            buttonSecondary = color("button/secondary"),
+            brandText = color("brand/text"),
+            textHeadingDarkPrimary = color("heading/primary"),
+            textHeadingLightPrimary = color("heading/primary-inv"),
+            textBodyDarkPrimary = color("fg/primary"),
+            textBodyDarkSecondary = color("fg/secondary"),
+            buttonPrimary = color("button/bg-primary"),
+            buttonSecondary = color("button/bg-secondary"),
             bgPrimary = color("bg/primary"),
             bgSecondary = color("bg/secondary"),
+            bgTertiary = color("bg/tertiary"),
+            bgLight = color("bg/light"),
+            bgLight24 = color("bg/light-24"),
+            bgLight64 = color("bg/light-64"),
+            bgLight8 = color("bg/light-8"),
+            bgAccentLayer = color("bg/accent-layer"),
+            borderPrimary = color("border/primary"),
+            borderSecondary = color("border/secondary"),
+            borderGloss = color("border/gloss"),
+            cardBgPrimary = color("card-bg/primary"),
+            cardBgSecondary = color("card-bg/secondary"),
+            cvBgBodyScan = color("cv/bg-body-scan"),
+            cvBgFitnessTest = color("cv/bg-fitness-test"),
+            cvBgFlexibilityTest = color("cv/bg-flexibility-test"),
+            cvPrimary = color("cv/primary"),
+            fgPrimaryDark = color("fg/primary-dark"),
+            fgPrimaryInv = color("fg/primary-inv"),
+            fgPrimaryLight = color("fg/primary-light"),
+            fgRed = color("fg/red"),
+            overlayCardAccent = color("overlay/card/accent"),
+            overlayCardDefault = color("overlay/card/default"),
         )
     }
 

@@ -65,6 +65,21 @@ class ZingSdk {
     return ZingSdkInitializerPlatform.instance.setProfileParams(params);
   }
 
+  /// Sets the partner primary location id for the logged-in user.
+  ///
+  /// Fails when the SDK is not initialized or the user is not logged in.
+  Future<void> setPrimaryLocationId(String id) {
+    return ZingSdkInitializerPlatform.instance.setPrimaryLocationId(id);
+  }
+
+  /// Updates the SDK's theme at runtime, independent of [init].
+  ///
+  /// Unlike calling [init] again, this only replaces the theme — it does not
+  /// touch the current [SdkConfiguration] or auth session.
+  Future<void> setTheme(SdkTheme theme) {
+    return ZingSdkInitializerPlatform.instance.setTheme(theme);
+  }
+
   /// Stream of authentication state changes from the native SDK.
   Stream<SdkAuthState> get authState {
     return ZingSdkInitializerPlatform.instance.authStateStream;

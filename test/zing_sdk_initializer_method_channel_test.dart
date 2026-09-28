@@ -76,6 +76,20 @@ void main() {
     );
   });
 
+  test('init forwards iOS blur style', () async {
+    await platform.init(
+      theme: const SdkTheme(blurStyle: SdkBlurStyle.systemMaterialDark),
+    );
+
+    expect(capturedCall?.method, 'init');
+    expect(
+      capturedCall?.arguments,
+      equals({
+        'theme': {'blurStyle': 'systemMaterialDark'},
+      }),
+    );
+  });
+
   test('login with apiKey sends correct android arguments', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -174,6 +188,7 @@ void main() {
         configuration: HomeScreenConfiguration(
           showCloseButton: false,
           showAskCoachButton: false,
+          showBodyScanWidget: false,
         ),
       ),
     );
@@ -185,6 +200,7 @@ void main() {
         'route': 'home',
         'showCloseButton': false,
         'showAskCoachButton': false,
+        'showBodyScanWidget': false,
       }),
     );
   });
@@ -224,6 +240,27 @@ void main() {
     await expectLater(
       _sendNativeCriticalError({'code': 'auth_error', 'message': 'error'}),
       completes,
+    );
+  });
+
+  test('setPrimaryLocationId sends the id', () async {
+    await platform.setPrimaryLocationId('location-1');
+
+    expect(capturedCall?.method, 'setPrimaryLocationID');
+    expect(capturedCall?.arguments, equals({'id': 'location-1'}));
+  });
+
+  test('setTheme sends the theme map directly as arguments', () async {
+    await platform.setTheme(
+      const SdkTheme(colors: SdkColors(fgRed: Color(0xFFC02640))),
+    );
+
+    expect(capturedCall?.method, 'setTheme');
+    expect(
+      capturedCall?.arguments,
+      equals({
+        'colors': {'fg/red': 0xFFC02640},
+      }),
     );
   });
 

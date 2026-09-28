@@ -59,6 +59,14 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
     throw UnimplementedError('setProfileParams() has not been implemented.');
   }
 
+  Future<void> setPrimaryLocationId(String id) {
+    throw UnimplementedError('setPrimaryLocationId() has not been implemented.');
+  }
+
+  Future<void> setTheme(SdkTheme theme) {
+    throw UnimplementedError('setTheme() has not been implemented.');
+  }
+
   Stream<SdkAuthState> get authStateStream {
     throw UnimplementedError('authStateStream has not been implemented.');
   }
