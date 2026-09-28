@@ -338,6 +338,11 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         )
     }
 
+    // Only the current, non-deprecated semantic tokens are mapped here — the Dart SdkColors
+    // list also carries a handful of legacy iOS-only fields (e.g. buttonLightYellow,
+    // textBodyLightPrimary) that have no slot in the native Android ZingSdkTheme.Colors and are
+    // intentionally left unread: Android already exposes only the current token set publicly, so
+    // those keys are simply never looked up and stay unused in colorsMap.
     @Suppress("UNCHECKED_CAST")
     private fun buildColors(themeMap: Map<String, Any>): ZingSdkTheme.Colors? {
         val colorsMap = themeMap["colors"] as? Map<String, Any> ?: return null
@@ -345,6 +350,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         return ZingSdkTheme.Colors(
             brandPrimary = color("brand/primary"),
             brandSecondary = color("brand/secondary"),
+            brandText = color("brand/text"),
             textHeadingDarkPrimary = color("heading/primary"),
             textHeadingLightPrimary = color("heading/primary-inv"),
             textBodyDarkPrimary = color("fg/primary"),
@@ -353,6 +359,27 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             buttonSecondary = color("button/bg-secondary"),
             bgPrimary = color("bg/primary"),
             bgSecondary = color("bg/secondary"),
+            bgTertiary = color("bg/tertiary"),
+            bgLight = color("bg/light"),
+            bgLight24 = color("bg/light-24"),
+            bgLight64 = color("bg/light-64"),
+            bgLight8 = color("bg/light-8"),
+            bgAccentLayer = color("bg/accent-layer"),
+            borderPrimary = color("border/primary"),
+            borderSecondary = color("border/secondary"),
+            borderGloss = color("border/gloss"),
+            cardBgPrimary = color("card-bg/primary"),
+            cardBgSecondary = color("card-bg/secondary"),
+            cvBgBodyScan = color("cv/bg-body-scan"),
+            cvBgFitnessTest = color("cv/bg-fitness-test"),
+            cvBgFlexibilityTest = color("cv/bg-flexibility-test"),
+            cvPrimary = color("cv/primary"),
+            fgPrimaryDark = color("fg/primary-dark"),
+            fgPrimaryInv = color("fg/primary-inv"),
+            fgPrimaryLight = color("fg/primary-light"),
+            fgRed = color("fg/red"),
+            overlayCardAccent = color("overlay/card/accent"),
+            overlayCardDefault = color("overlay/card/default"),
         )
     }
 
