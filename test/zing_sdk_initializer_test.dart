@@ -21,10 +21,12 @@ class _MockZingSdkInitializerPlatform
   int openScreenCount = 0;
   int setProfileParamsCount = 0;
   int setPrimaryLocationIdCount = 0;
+  int setThemeCount = 0;
   SdkAuthentication? lastAuth;
   StartingRoute? lastRoute;
   ProfileParams? lastProfileParams;
   String? lastPrimaryLocationId;
+  SdkTheme? lastTheme;
   CriticalErrorCallback? lastCriticalErrorCallback;
 
   final _authStateController = StreamController<SdkAuthState>.broadcast();
@@ -64,6 +66,12 @@ class _MockZingSdkInitializerPlatform
   Future<void> setPrimaryLocationId(String id) async {
     setPrimaryLocationIdCount += 1;
     lastPrimaryLocationId = id;
+  }
+
+  @override
+  Future<void> setTheme(SdkTheme theme) async {
+    setThemeCount += 1;
+    lastTheme = theme;
   }
 
   @override
@@ -146,6 +154,14 @@ void main() {
 
       expect(mockPlatform.setPrimaryLocationIdCount, equals(1));
       expect(mockPlatform.lastPrimaryLocationId, 'location-1');
+    });
+
+    test('setTheme delegates to platform', () async {
+      const theme = SdkTheme(colors: SdkColors(fgRed: Color(0xFFC02640)));
+      await ZingSdk.instance.setTheme(theme);
+
+      expect(mockPlatform.setThemeCount, equals(1));
+      expect(mockPlatform.lastTheme, same(theme));
     });
 
     test('openScreen delegates simple route', () async {

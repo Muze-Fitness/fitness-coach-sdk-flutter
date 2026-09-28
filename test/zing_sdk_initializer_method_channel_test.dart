@@ -250,6 +250,20 @@ void main() {
     expect(capturedCall?.arguments, equals({'id': 'location-1'}));
   });
 
+  test('setTheme sends the theme map directly as arguments', () async {
+    await platform.setTheme(
+      const SdkTheme(colors: SdkColors(fgRed: Color(0xFFC02640))),
+    );
+
+    expect(capturedCall?.method, 'setTheme');
+    expect(
+      capturedCall?.arguments,
+      equals({
+        'colors': {'fg/red': 0xFFC02640},
+      }),
+    );
+  });
+
   test('setProfileParams sends full payload', () async {
     await platform.setProfileParams(
       const ProfileParams(
