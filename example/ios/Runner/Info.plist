@@ -45,6 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>NSHealthShareUsageDescription</key>
 	<string>We use your health data to personalize workouts and track your fitness progress.</string>
 	<key>NSHealthUpdateUsageDescription</key>

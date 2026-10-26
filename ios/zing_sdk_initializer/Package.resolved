@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Muze-Fitness/zing-coach-ios-tools",
       "state" : {
-        "revision" : "7be57761304d962e8d7eacd61a8482d834a646a6",
-        "version" : "1.7.0"
+        "revision" : "4fac94230b13cd63f9ea1be3e825c274fc1e3332",
+        "version" : "1.8.1"
       }
     },
     {
@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Muze-Fitness/zing-coach-sdk-ios",
       "state" : {
-        "revision" : "0e3c47cbbda419c177dac886c71c14ab4ccc6cbf",
-        "version" : "2.3.0"
+        "revision" : "a704bc18bbd4f0a340ac9ef4c301e9ca3731c887",
+        "version" : "2.4.0"
       }
     }
   ],
