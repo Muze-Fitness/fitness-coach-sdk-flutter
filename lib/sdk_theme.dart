@@ -73,14 +73,9 @@ class SdkColors {
     this.borderGloss,
     this.brandPrimary,
     this.brandSecondary,
-    this.brandTertiary,
     this.brandText,
     this.buttonPrimary,
     this.buttonSecondary,
-    this.buttonLightYellow,
-    this.buttonLightOrchid,
-    this.buttonLightBlue,
-    this.buttonIconTransparent,
     this.cardBgPrimary,
     this.cardBgSecondary,
     this.cvBgBodyScan,
@@ -93,19 +88,9 @@ class SdkColors {
     this.fgPrimaryInv,
     this.fgPrimaryLight,
     this.fgRed,
-    this.headingPrimary,
-    this.headingPrimaryInv,
-    this.overlayBlackDark,
-    this.overlayBlackMedium,
-    this.overlayCadetMedium,
+    this.metricsWeight,
     this.overlayCardAccent,
     this.overlayCardDefault,
-    this.textBodyLightPrimary,
-    this.textBodyLightSecondary,
-    this.textBodyBluePrimary,
-    this.textBodyBlueSecondary,
-    this.textBodyYellowPrimary,
-    this.textBodyOrchidPrimary,
   });
 
   final Color? bgPrimary;
@@ -123,15 +108,10 @@ class SdkColors {
 
   final Color? brandPrimary;
   final Color? brandSecondary;
-  final Color? brandTertiary;
   final Color? brandText;
 
   final Color? buttonPrimary;
   final Color? buttonSecondary;
-  final Color? buttonLightYellow;
-  final Color? buttonLightOrchid;
-  final Color? buttonLightBlue;
-  final Color? buttonIconTransparent;
 
   final Color? cardBgPrimary;
   final Color? cardBgSecondary;
@@ -148,22 +128,10 @@ class SdkColors {
   final Color? fgPrimaryLight;
   final Color? fgRed;
 
-  final Color? headingPrimary;
-  final Color? headingPrimaryInv;
-
-  final Color? overlayBlackDark;
-  final Color? overlayBlackMedium;
-  final Color? overlayCadetMedium;
+  final Color? metricsWeight;
 
   final Color? overlayCardAccent;
   final Color? overlayCardDefault;
-
-  final Color? textBodyLightPrimary;
-  final Color? textBodyLightSecondary;
-  final Color? textBodyBluePrimary;
-  final Color? textBodyBlueSecondary;
-  final Color? textBodyYellowPrimary;
-  final Color? textBodyOrchidPrimary;
 
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{};
@@ -186,15 +154,10 @@ class SdkColors {
 
     put('brand/primary', brandPrimary);
     put('brand/secondary', brandSecondary);
-    put('brand/tertiary', brandTertiary);
     put('brand/text', brandText);
 
     put('button/bg-primary', buttonPrimary);
     put('button/bg-secondary', buttonSecondary);
-    put('button/bg-light-yellow', buttonLightYellow);
-    put('button/bg-light-orchid', buttonLightOrchid);
-    put('button/bg-light-blue', buttonLightBlue);
-    put('button/bg-icon-transparent', buttonIconTransparent);
 
     put('card-bg/primary', cardBgPrimary);
     put('card-bg/secondary', cardBgSecondary);
@@ -211,22 +174,10 @@ class SdkColors {
     put('fg/primary-light', fgPrimaryLight);
     put('fg/red', fgRed);
 
-    put('heading/primary', headingPrimary);
-    put('heading/primary-inv', headingPrimaryInv);
-
-    put('overlay/black-dark', overlayBlackDark);
-    put('overlay/black-medium', overlayBlackMedium);
-    put('overlay/cadet-medium', overlayCadetMedium);
+    put('metrics/weight', metricsWeight);
 
     put('overlay/card/accent', overlayCardAccent);
     put('overlay/card/default', overlayCardDefault);
-
-    put('text/body/light-primary', textBodyLightPrimary);
-    put('text/body/light-secondary', textBodyLightSecondary);
-    put('text/body/blue-primary', textBodyBluePrimary);
-    put('text/body/blue-secondary', textBodyBlueSecondary);
-    put('text/body/yellow-primary', textBodyYellowPrimary);
-    put('text/body/orchid-primary', textBodyOrchidPrimary);
 
     return map;
   }
