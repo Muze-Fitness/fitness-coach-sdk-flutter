@@ -88,8 +88,6 @@ class SdkColors {
     this.fgPrimaryInv,
     this.fgPrimaryLight,
     this.fgRed,
-    this.headingPrimary,
-    this.headingPrimaryInv,
     this.metricsWeight,
     this.overlayCardAccent,
     this.overlayCardDefault,
@@ -130,13 +128,6 @@ class SdkColors {
   final Color? fgPrimaryLight;
   final Color? fgRed;
 
-  /// Android only: no matching iOS token since iOS SDK 2.4.0.
-  final Color? headingPrimary;
-
-  /// Android only: no matching iOS token since iOS SDK 2.4.0.
-  final Color? headingPrimaryInv;
-
-  /// iOS only.
   final Color? metricsWeight;
 
   final Color? overlayCardAccent;
@@ -182,9 +173,6 @@ class SdkColors {
     put('fg/primary-inv', fgPrimaryInv);
     put('fg/primary-light', fgPrimaryLight);
     put('fg/red', fgRed);
-
-    put('heading/primary', headingPrimary);
-    put('heading/primary-inv', headingPrimaryInv);
 
     put('metrics/weight', metricsWeight);
 
