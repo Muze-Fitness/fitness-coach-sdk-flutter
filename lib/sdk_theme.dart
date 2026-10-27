@@ -88,8 +88,6 @@ class SdkColors {
     this.fgPrimaryInv,
     this.fgPrimaryLight,
     this.fgRed,
-    this.headingPrimary,
-    this.headingPrimaryInv,
     this.metricsWeight,
     this.overlayCardAccent,
     this.overlayCardDefault,
@@ -129,12 +127,6 @@ class SdkColors {
   final Color? fgPrimaryInv;
   final Color? fgPrimaryLight;
   final Color? fgRed;
-
-  @Deprecated('Use fgPrimary. Removed from both native SDKs in 2.4; on Android it is used only when fgPrimary is not set.')
-  final Color? headingPrimary;
-
-  @Deprecated('Use fgPrimaryInv. Removed from both native SDKs in 2.4; on Android it is used only when fgPrimaryInv is not set.')
-  final Color? headingPrimaryInv;
 
   final Color? metricsWeight;
 
@@ -181,9 +173,6 @@ class SdkColors {
     put('fg/primary-inv', fgPrimaryInv);
     put('fg/primary-light', fgPrimaryLight);
     put('fg/red', fgRed);
-
-    put('heading/primary', headingPrimary);
-    put('heading/primary-inv', headingPrimaryInv);
 
     put('metrics/weight', metricsWeight);
 
