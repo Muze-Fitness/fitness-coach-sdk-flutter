@@ -41,8 +41,6 @@ const darkSdkTheme = SdkTheme(
     fgSecondary: Color(0xFFA3ABC3),
     fgPrimaryInv: Color(0xFF000000),
     fgRed: Color(0xFFC02640),
-    headingPrimary: Color(0xFFFFFFFF),
-    headingPrimaryInv: Color(0xFF000000),
     overlayCardAccent: Color(0x66FFFFFF),
     overlayCardDefault: Color(0x66100D29),
   ),

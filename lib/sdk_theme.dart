@@ -130,13 +130,12 @@ class SdkColors {
   final Color? fgPrimaryLight;
   final Color? fgRed;
 
-  /// Android only: no matching iOS token since iOS SDK 2.4.0.
+  @Deprecated('Use fgPrimary. Removed from both native SDKs in 2.4; on Android it is used only when fgPrimary is not set.')
   final Color? headingPrimary;
 
-  /// Android only: no matching iOS token since iOS SDK 2.4.0.
+  @Deprecated('Use fgPrimaryInv. Removed from both native SDKs in 2.4; on Android it is used only when fgPrimaryInv is not set.')
   final Color? headingPrimaryInv;
 
-  /// iOS only.
   final Color? metricsWeight;
 
   final Color? overlayCardAccent;
