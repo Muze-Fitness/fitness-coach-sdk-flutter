@@ -85,6 +85,30 @@ class _MockZingSdkInitializerPlatform
   @override
   Stream<SdkAuthState> get authStateStream => _authStateController.stream;
 
+  List<CompletedWorkout> completedWorkouts = [];
+  final completedWorkoutsController =
+      StreamController<List<CompletedWorkout>>.broadcast();
+
+  @override
+  Future<List<PlannedWorkout>> getPlannedWorkouts() async => [];
+
+  @override
+  Stream<List<PlannedWorkout>> observePlannedWorkouts() => const Stream.empty();
+
+  @override
+  Future<List<CompletedWorkout>> getCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) async =>
+      completedWorkouts;
+
+  @override
+  Stream<List<CompletedWorkout>> observeCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) =>
+      completedWorkoutsController.stream;
+
   void emitAuthState(SdkAuthState state) => _authStateController.add(state);
 
   void reset() {
@@ -98,7 +122,10 @@ class _MockZingSdkInitializerPlatform
     lastProfileParams = null;
   }
 
-  void dispose() => _authStateController.close();
+  void dispose() {
+    _authStateController.close();
+    completedWorkoutsController.close();
+  }
 }
 
 void main() {
@@ -147,6 +174,48 @@ void main() {
       await ZingSdk.instance.logout();
 
       expect(mockPlatform.logoutCount, equals(1));
+    });
+
+    group('completed workouts count', () {
+      final start = DateTime(2026, 11, 1);
+      final end = DateTime(2026, 11, 30);
+      CompletedWorkout workout(SdkWorkoutType type) => CompletedWorkout(
+            workoutType: type,
+            date: DateTime(2026, 11, 10),
+            actualDuration: const Duration(minutes: 20),
+          );
+
+      test('counts only the requested type', () async {
+        mockPlatform.completedWorkouts = [
+          workout(SdkWorkoutType.regular),
+          workout(SdkWorkoutType.recovery),
+          workout(SdkWorkoutType.regular),
+        ];
+
+        final count = await ZingSdk.instance
+            .getCompletedWorkoutsCount(start, end, SdkWorkoutType.regular);
+
+        expect(count, 2);
+      });
+
+      test('observe emits distinct counts', () async {
+        final counts = <int>[];
+        final subscription = ZingSdk.instance
+            .observeCompletedWorkoutsCount(start, end, SdkWorkoutType.recovery)
+            .listen(counts.add);
+
+        mockPlatform.completedWorkoutsController
+          ..add([workout(SdkWorkoutType.regular)])
+          ..add([
+            workout(SdkWorkoutType.regular),
+            workout(SdkWorkoutType.regular),
+          ])
+          ..add([workout(SdkWorkoutType.recovery)]);
+        await pumpEventQueue();
+        await subscription.cancel();
+
+        expect(counts, [0, 1]);
+      });
     });
 
     test('setPrimaryLocationId delegates to platform', () async {

@@ -7,11 +7,13 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
     private var sdk: ZingSDK?
     private var authStateChannel: FlutterEventChannel?
     private var criticalErrorChannel: FlutterMethodChannel?
+    private var workoutActivityHandler: WorkoutActivityHandler?
 
     private enum Channel {
         static let initializer = "zing_sdk_initializer"
         static let authState = "zing_sdk_initializer/auth_state"
         static let criticalErrorHandler = "zing_sdk_initializer/critical_error_handler"
+        static let workoutActivity = "zing_sdk_initializer/workout_activity"
     }
 
     private enum Method {
@@ -65,6 +67,12 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             name: Channel.criticalErrorHandler,
             binaryMessenger: registrar.messenger()
         )
+        instance.workoutActivityHandler = WorkoutActivityHandler(
+            channel: FlutterMethodChannel(
+                name: Channel.workoutActivity,
+                binaryMessenger: registrar.messenger()
+            )
+        )
 
         registrar.register(
             ZingProgramViewFactory(plugin: instance),
@@ -99,7 +107,9 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case Method.setTheme:
             handleSetTheme(method: call, result)
         default:
-            result(FlutterMethodNotImplemented)
+            if workoutActivityHandler?.handle(call, sdk: sdk, result: result) != true {
+                result(FlutterMethodNotImplemented)
+            }
         }
     }
 

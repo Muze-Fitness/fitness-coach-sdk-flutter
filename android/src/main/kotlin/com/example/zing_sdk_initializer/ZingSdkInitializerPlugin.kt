@@ -36,6 +36,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         private const val CHANNEL_NAME = "zing_sdk_initializer"
         private const val AUTH_STATE_CHANNEL_NAME = "zing_sdk_initializer/auth_state"
         private const val CRITICAL_ERROR_CHANNEL_NAME = "zing_sdk_initializer/critical_error_handler"
+        private const val WORKOUT_ACTIVITY_CHANNEL_NAME = "zing_sdk_initializer/workout_activity"
         private const val TAG = "ZingSdkInitializer"
         private const val METHOD_INIT = "init"
         private const val METHOD_LOGIN = "login"
@@ -67,6 +68,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private lateinit var channel: MethodChannel
     private lateinit var authStateEventChannel: EventChannel
     private lateinit var criticalErrorChannel: MethodChannel
+    private lateinit var workoutActivityHandler: WorkoutActivityHandler
     private var activityContext: Context? = null
     private var appContext: Context? = null
 
@@ -84,6 +86,11 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
 
         criticalErrorChannel = MethodChannel(binding.binaryMessenger, CRITICAL_ERROR_CHANNEL_NAME)
         ZingSdk.criticalErrorHandler = CriticalErrorHandler(criticalErrorChannel, scope)
+
+        workoutActivityHandler = WorkoutActivityHandler(
+            scope = scope,
+            eventChannel = MethodChannel(binding.binaryMessenger, WORKOUT_ACTIVITY_CHANNEL_NAME),
+        )
 
         binding.platformViewRegistry.registerViewFactory(
             ZingSdkHomeViewFactory.VIEW_TYPE,
@@ -108,7 +115,7 @@ class ZingSdkInitializerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             METHOD_REGISTER_BACKGROUND_SETUP -> handleRegisterBackgroundSetup(call, result)
             METHOD_SET_PRIMARY_LOCATION_ID -> handleSetPrimaryLocationId(call, result)
             METHOD_SET_THEME -> handleSetTheme(call, result)
-            else -> result.notImplemented()
+            else -> if (!workoutActivityHandler.handle(call, result)) result.notImplemented()
         }
     }
 

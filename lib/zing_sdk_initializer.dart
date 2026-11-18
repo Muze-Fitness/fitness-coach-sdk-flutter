@@ -5,6 +5,7 @@ import 'sdk_configuration.dart';
 import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
+import 'workout_activity.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
 
 export 'profile_params.dart';
@@ -15,6 +16,7 @@ export 'sdk_configuration.dart';
 export 'sdk_critical_error.dart';
 export 'sdk_theme.dart';
 export 'starting_route.dart';
+export 'workout_activity.dart';
 export 'zing_home_view.dart';
 
 /// Public API for initializing and interacting with the native Zing SDK.
@@ -88,5 +90,64 @@ class ZingSdk {
   /// Registers [callback] to receive critical SDK errors.
   set criticalErrorCallback(CriticalErrorCallback? callback) {
     ZingSdkInitializerPlatform.instance.setCriticalErrorCallback(callback);
+  }
+
+  /// Workouts of the current plan, sorted by date.
+  ///
+  /// Requires a logged-in user who has completed onboarding. Otherwise throws
+  /// a [PlatformException] with a [WorkoutActivityErrorCode].
+  Future<List<PlannedWorkout>> getPlannedWorkouts() {
+    return ZingSdkInitializerPlatform.instance.getPlannedWorkouts();
+  }
+
+  /// Same as [getPlannedWorkouts], updated when the plan or the current day
+  /// changes. Closes on logout.
+  Stream<List<PlannedWorkout>> observePlannedWorkouts() {
+    return ZingSdkInitializerPlatform.instance.observePlannedWorkouts();
+  }
+
+  /// Workouts that started at or after [start] and finished at or before
+  /// [end], sorted by start time.
+  ///
+  /// Requires a logged-in user. Otherwise throws a [PlatformException] with a
+  /// [WorkoutActivityErrorCode].
+  Future<List<CompletedWorkout>> getCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) {
+    return ZingSdkInitializerPlatform.instance.getCompletedWorkouts(start, end);
+  }
+
+  /// Same as [getCompletedWorkouts], updated when workout results change.
+  /// Closes on logout.
+  Stream<List<CompletedWorkout>> observeCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) {
+    return ZingSdkInitializerPlatform.instance
+        .observeCompletedWorkouts(start, end);
+  }
+
+  /// Number of [getCompletedWorkouts] of the given [workoutType].
+  Future<int> getCompletedWorkoutsCount(
+    DateTime start,
+    DateTime end,
+    SdkWorkoutType workoutType,
+  ) async {
+    final workouts = await getCompletedWorkouts(start, end);
+    return workouts.where((it) => it.workoutType == workoutType).length;
+  }
+
+  /// Same as [getCompletedWorkoutsCount], updated when workout results change.
+  /// Closes on logout.
+  Stream<int> observeCompletedWorkoutsCount(
+    DateTime start,
+    DateTime end,
+    SdkWorkoutType workoutType,
+  ) {
+    return observeCompletedWorkouts(start, end)
+        .map((workouts) =>
+            workouts.where((it) => it.workoutType == workoutType).length)
+        .distinct();
   }
 }

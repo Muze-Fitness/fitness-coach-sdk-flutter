@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -11,13 +12,23 @@ import 'sdk_configuration.dart';
 import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
+import 'workout_activity.dart';
 import 'zing_sdk_initializer_platform_interface.dart';
 
 /// An implementation of [ZingSdkInitializerPlatform] that uses method channels.
 class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   MethodChannelZingSdkInitializer() {
     criticalErrorChannel.setMethodCallHandler(_handleCriticalErrorCall);
+    workoutActivityChannel.setMethodCallHandler(_handleWorkoutActivityCall);
   }
+
+  /// Method channel for native-to-Dart workout activity subscription events.
+  @visibleForTesting
+  final workoutActivityChannel =
+      const MethodChannel('zing_sdk_initializer/workout_activity');
+
+  final _workoutActivitySubscriptions = <int, StreamController<Object?>>{};
+  int _nextWorkoutActivitySubscriptionId = 0;
 
   /// The method channel used to interact with the native platform.
   @visibleForTesting
@@ -145,6 +156,121 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
         authStateEventChannel.receiveBroadcastStream().map((event) {
       return SdkAuthState.fromMap(Map<String, dynamic>.from(event as Map));
     }).asBroadcastStream();
+  }
+
+  @override
+  Future<List<PlannedWorkout>> getPlannedWorkouts() async {
+    final workouts =
+        await methodChannel.invokeListMethod<Object?>('getPlannedWorkouts');
+    return _plannedWorkouts(workouts);
+  }
+
+  @override
+  Stream<List<PlannedWorkout>> observePlannedWorkouts() {
+    return _observeWorkoutActivity(
+      'observePlannedWorkouts',
+      const {},
+      (data) => _plannedWorkouts(data as List<Object?>),
+    );
+  }
+
+  @override
+  Future<List<CompletedWorkout>> getCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final workouts = await methodChannel.invokeListMethod<Object?>(
+      'getCompletedWorkouts',
+      _intervalArguments(start, end),
+    );
+    return _completedWorkouts(workouts);
+  }
+
+  @override
+  Stream<List<CompletedWorkout>> observeCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) {
+    return _observeWorkoutActivity(
+      'observeCompletedWorkouts',
+      _intervalArguments(start, end),
+      (data) => _completedWorkouts(data as List<Object?>),
+    );
+  }
+
+  Map<String, Object?> _intervalArguments(DateTime start, DateTime end) {
+    if (end.isBefore(start)) {
+      throw ArgumentError('end ($end) must not be before start ($start)');
+    }
+    return {
+      'start': start.millisecondsSinceEpoch,
+      'end': end.millisecondsSinceEpoch,
+    };
+  }
+
+  List<PlannedWorkout> _plannedWorkouts(List<Object?>? workouts) {
+    return [
+      for (final workout in workouts ?? const [])
+        PlannedWorkout.fromMap(workout as Map<Object?, Object?>),
+    ];
+  }
+
+  List<CompletedWorkout> _completedWorkouts(List<Object?>? workouts) {
+    return [
+      for (final workout in workouts ?? const [])
+        CompletedWorkout.fromMap(workout as Map<Object?, Object?>),
+    ];
+  }
+
+  Stream<T> _observeWorkoutActivity<T>(
+    String method,
+    Map<String, Object?> arguments,
+    T Function(Object? data) parse,
+  ) {
+    final id = _nextWorkoutActivitySubscriptionId++;
+    late final StreamController<Object?> controller;
+    controller = StreamController<Object?>(
+      onListen: () {
+        _workoutActivitySubscriptions[id] = controller;
+        methodChannel
+            .invokeMethod<void>(method, {...arguments, 'id': id})
+            .catchError((Object error, StackTrace stackTrace) {
+          if (_workoutActivitySubscriptions.remove(id) != null) {
+            controller.addError(error, stackTrace);
+            controller.close();
+          }
+        });
+      },
+      onCancel: () async {
+        if (_workoutActivitySubscriptions.remove(id) != null) {
+          await methodChannel
+              .invokeMethod<void>('cancelWorkoutActivity', {'id': id});
+        }
+      },
+    );
+    return controller.stream.map(parse);
+  }
+
+  Future<void> _handleWorkoutActivityCall(MethodCall call) async {
+    final args = Map<Object?, Object?>.from(call.arguments as Map);
+    final id = args['id'] as int;
+    final controller = _workoutActivitySubscriptions[id];
+    if (controller == null) return;
+
+    switch (call.method) {
+      case 'onData':
+        controller.add(args['data']);
+      case 'onError':
+        _workoutActivitySubscriptions.remove(id);
+        controller.addError(PlatformException(
+          code: args['code'] as String,
+          message: args['message'] as String?,
+        ));
+        await controller.close();
+      case 'onDone':
+        _workoutActivitySubscriptions.remove(id);
+        await controller.close();
+    }
   }
 }
 
