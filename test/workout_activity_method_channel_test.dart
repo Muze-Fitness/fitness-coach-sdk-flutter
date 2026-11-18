@@ -6,7 +6,7 @@ import 'package:zing_sdk_initializer/zing_sdk_initializer_method_channel.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('zing_sdk_initializer');
+  const channel = MethodChannel('zing_sdk_initializer/workout_activity');
   final calls = <MethodCall>[];
   Object? Function(MethodCall call) respond = (_) => null;
   late MethodChannelZingSdkInitializer platform;

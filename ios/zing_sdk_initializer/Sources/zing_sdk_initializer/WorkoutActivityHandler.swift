@@ -18,33 +18,38 @@ final class WorkoutActivityHandler {
     }
 
     private let channel: FlutterMethodChannel
+    private let sdk: () throws -> ZingSDK
     private var subscriptions: [Int: AnyCancellable] = [:]
 
-    init(channel: FlutterMethodChannel) {
+    init(channel: FlutterMethodChannel, sdk: @escaping () throws -> ZingSDK) {
         self.channel = channel
+        self.sdk = sdk
+        channel.setMethodCallHandler { [weak self] call, result in
+            self?.handle(call, result: result)
+        }
     }
 
-    func handle(_ call: FlutterMethodCall, sdk: ZingSDK?, result: @escaping FlutterResult) -> Bool {
+    private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let args = call.arguments as? [String: Any] ?? [:]
         switch call.method {
         case Method.getPlannedWorkouts:
-            respond(sdk: sdk, result: result) { sdk in
-                try sdk.plannedWorkouts.map(\.flutterMap)
+            respond(result) {
+                try self.sdk().plannedWorkouts.map(\.flutterMap)
             }
         case Method.getCompletedWorkouts:
-            respond(sdk: sdk, result: result) { sdk in
-                try sdk.completedWorkouts(in: Self.interval(from: args)).map(\.flutterMap)
+            respond(result) {
+                try self.sdk().completedWorkouts(in: Self.interval(from: args)).map(\.flutterMap)
             }
         case Method.observePlannedWorkouts:
-            observe(args: args, sdk: sdk, result: result) { sdk in
-                try sdk.plannedWorkoutsPublisher
-                    .map { $0.map(\.flutterMap) as Any }
+            observe(args: args, result: result) {
+                try self.sdk().plannedWorkoutsPublisher
+                    .map { $0.map(\.flutterMap) }
                     .eraseToAnyPublisher()
             }
         case Method.observeCompletedWorkouts:
-            observe(args: args, sdk: sdk, result: result) { sdk in
-                try sdk.completedWorkoutsPublisher(in: Self.interval(from: args))
-                    .map { $0.map(\.flutterMap) as Any }
+            observe(args: args, result: result) {
+                try self.sdk().completedWorkoutsPublisher(in: Self.interval(from: args))
+                    .map { $0.map(\.flutterMap) }
                     .eraseToAnyPublisher()
             }
         case Method.cancel:
@@ -53,18 +58,13 @@ final class WorkoutActivityHandler {
             }
             result(nil)
         default:
-            return false
+            result(FlutterMethodNotImplemented)
         }
-        return true
     }
 
-    private func respond(sdk: ZingSDK?, result: FlutterResult, makeValue: (ZingSDK) throws -> Any) {
-        guard let sdk else {
-            result(ZingSdkInitializerPlugin.PluginError.notInitialized.toFlutter())
-            return
-        }
+    private func respond(_ result: FlutterResult, makeValue: () throws -> Any) {
         do {
-            result(try makeValue(sdk))
+            result(try makeValue())
         } catch {
             result(error.toFlutter())
         }
@@ -72,27 +72,23 @@ final class WorkoutActivityHandler {
 
     private func observe(
         args: [String: Any],
-        sdk: ZingSDK?,
         result: FlutterResult,
-        makePublisher: (ZingSDK) throws -> AnyPublisher<Any, Never>
+        makePublisher: () throws -> AnyPublisher<[[String: Any]], Never>
     ) {
-        guard let sdk else {
-            result(ZingSdkInitializerPlugin.PluginError.notInitialized.toFlutter())
-            return
-        }
         guard let id = (args["id"] as? NSNumber)?.intValue else {
             result(WorkoutActivityArgumentError.missingArgument("id").toFlutter())
             return
         }
-        let publisher: AnyPublisher<Any, Never>
+        let publisher: AnyPublisher<[[String: Any]], Never>
         do {
-            publisher = try makePublisher(sdk)
+            publisher = try makePublisher()
         } catch {
             result(error.toFlutter())
             return
         }
         subscriptions.removeValue(forKey: id)?.cancel()
         subscriptions[id] = publisher
+            .removeDuplicates { NSArray(array: $0).isEqual(to: $1) }
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] _ in
@@ -125,27 +121,12 @@ enum WorkoutActivityArgumentError: Error {
     case invalidInterval
 }
 
-extension WorkoutActivityArgumentError: FlutterCodableError {
-    var flutterCode: String {
-        "workout_activity_failed"
-    }
-}
-
-extension ZingSDK.WorkoutActivityError: FlutterCodableError {
-    var flutterCode: String {
-        switch self {
-        case .notLoggedIn: "not_logged_in"
-        case .onboardingNotCompleted: "onboarding_not_completed"
-        }
-    }
-}
-
 private extension PlannedWorkout {
     var flutterMap: [String: Any] {
         [
             "workoutType": workoutType.flutterName,
-            "date": date.flutterMillis,
-            "estimatedDuration": Int64((estimatedDuration * 1000).rounded()),
+            "date": date.timeIntervalSince1970.flutterMillis,
+            "estimatedDuration": estimatedDuration.flutterMillis,
         ]
     }
 }
@@ -154,8 +135,8 @@ private extension CompletedWorkout {
     var flutterMap: [String: Any] {
         [
             "workoutType": workoutType.flutterName,
-            "date": date.flutterMillis,
-            "actualDuration": Int64((actualDuration * 1000).rounded()),
+            "date": date.timeIntervalSince1970.flutterMillis,
+            "actualDuration": actualDuration.flutterMillis,
         ]
     }
 }
@@ -169,12 +150,14 @@ private extension PlannedWorkout.WorkoutType {
     }
 }
 
+private extension TimeInterval {
+    var flutterMillis: Int64 {
+        Int64((self * 1000).rounded())
+    }
+}
+
 private extension Date {
     init(flutterMillis: Int64) {
         self.init(timeIntervalSince1970: TimeInterval(flutterMillis) / 1000)
-    }
-
-    var flutterMillis: Int64 {
-        Int64((timeIntervalSince1970 * 1000).rounded())
     }
 }

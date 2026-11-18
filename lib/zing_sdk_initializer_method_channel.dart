@@ -22,7 +22,13 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
     workoutActivityChannel.setMethodCallHandler(_handleWorkoutActivityCall);
   }
 
-  /// Method channel for native-to-Dart workout activity subscription events.
+  /// Method channel for the workout activity API.
+  ///
+  /// Dart calls `getPlannedWorkouts`, `getCompletedWorkouts`,
+  /// `observePlannedWorkouts` and `observeCompletedWorkouts` (the observe calls
+  /// carry a subscription `id`) and `cancelWorkoutActivity` with that `id`.
+  /// Native answers each subscription with `onData` (`id`, `data`), `onError`
+  /// (`id`, `code`, `message`) and `onDone` (`id`).
   @visibleForTesting
   final workoutActivityChannel =
       const MethodChannel('zing_sdk_initializer/workout_activity');
@@ -141,10 +147,7 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
 
     if (call.method == 'onCriticalError') {
       final args = Map<String, dynamic>.from(call.arguments as Map);
-      callback.onCriticalError(PlatformException(
-        code: args['code'] as String,
-        message: args['message'] as String?,
-      ));
+      callback.onCriticalError(_platformException(args));
     }
   }
 
@@ -160,9 +163,9 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
 
   @override
   Future<List<PlannedWorkout>> getPlannedWorkouts() async {
-    final workouts =
-        await methodChannel.invokeListMethod<Object?>('getPlannedWorkouts');
-    return _plannedWorkouts(workouts);
+    final workouts = await workoutActivityChannel
+        .invokeListMethod<Object?>('getPlannedWorkouts');
+    return _parseWorkouts(workouts, PlannedWorkout.fromMap);
   }
 
   @override
@@ -170,7 +173,7 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
     return _observeWorkoutActivity(
       'observePlannedWorkouts',
       const {},
-      (data) => _plannedWorkouts(data as List<Object?>),
+      (data) => _parseWorkouts(data, PlannedWorkout.fromMap),
     );
   }
 
@@ -179,11 +182,11 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
     DateTime start,
     DateTime end,
   ) async {
-    final workouts = await methodChannel.invokeListMethod<Object?>(
+    final workouts = await workoutActivityChannel.invokeListMethod<Object?>(
       'getCompletedWorkouts',
       _intervalArguments(start, end),
     );
-    return _completedWorkouts(workouts);
+    return _parseWorkouts(workouts, CompletedWorkout.fromMap);
   }
 
   @override
@@ -194,7 +197,7 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
     return _observeWorkoutActivity(
       'observeCompletedWorkouts',
       _intervalArguments(start, end),
-      (data) => _completedWorkouts(data as List<Object?>),
+      (data) => _parseWorkouts(data, CompletedWorkout.fromMap),
     );
   }
 
@@ -208,17 +211,13 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
     };
   }
 
-  List<PlannedWorkout> _plannedWorkouts(List<Object?>? workouts) {
+  List<T> _parseWorkouts<T>(
+    Object? workouts,
+    T Function(Map<Object?, Object?> map) fromMap,
+  ) {
     return [
-      for (final workout in workouts ?? const [])
-        PlannedWorkout.fromMap(workout as Map<Object?, Object?>),
-    ];
-  }
-
-  List<CompletedWorkout> _completedWorkouts(List<Object?>? workouts) {
-    return [
-      for (final workout in workouts ?? const [])
-        CompletedWorkout.fromMap(workout as Map<Object?, Object?>),
+      for (final workout in (workouts as List<Object?>?) ?? const [])
+        fromMap(workout as Map<Object?, Object?>),
     ];
   }
 
@@ -232,7 +231,7 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
     controller = StreamController<Object?>(
       onListen: () {
         _workoutActivitySubscriptions[id] = controller;
-        methodChannel
+        workoutActivityChannel
             .invokeMethod<void>(method, {...arguments, 'id': id})
             .catchError((Object error, StackTrace stackTrace) {
           if (_workoutActivitySubscriptions.remove(id) != null) {
@@ -243,7 +242,7 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
       },
       onCancel: () async {
         if (_workoutActivitySubscriptions.remove(id) != null) {
-          await methodChannel
+          await workoutActivityChannel
               .invokeMethod<void>('cancelWorkoutActivity', {'id': id});
         }
       },
@@ -252,7 +251,7 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
   }
 
   Future<void> _handleWorkoutActivityCall(MethodCall call) async {
-    final args = Map<Object?, Object?>.from(call.arguments as Map);
+    final args = call.arguments as Map;
     final id = args['id'] as int;
     final controller = _workoutActivitySubscriptions[id];
     if (controller == null) return;
@@ -262,15 +261,19 @@ class MethodChannelZingSdkInitializer extends ZingSdkInitializerPlatform {
         controller.add(args['data']);
       case 'onError':
         _workoutActivitySubscriptions.remove(id);
-        controller.addError(PlatformException(
-          code: args['code'] as String,
-          message: args['message'] as String?,
-        ));
+        controller.addError(_platformException(args));
         await controller.close();
       case 'onDone':
         _workoutActivitySubscriptions.remove(id);
         await controller.close();
     }
+  }
+
+  PlatformException _platformException(Map<Object?, Object?> args) {
+    return PlatformException(
+      code: args['code'] as String,
+      message: args['message'] as String?,
+    );
   }
 }
 

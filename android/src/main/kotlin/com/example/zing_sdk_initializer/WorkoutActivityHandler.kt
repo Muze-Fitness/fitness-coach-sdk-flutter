@@ -21,12 +21,12 @@ import java.time.ZoneId
 
 class WorkoutActivityHandler(
     private val scope: CoroutineScope,
-    private val eventChannel: MethodChannel,
-) {
+    private val channel: MethodChannel,
+) : MethodChannel.MethodCallHandler {
 
     private val subscriptions = mutableMapOf<Int, Job>()
 
-    fun handle(call: MethodCall, result: MethodChannel.Result): Boolean {
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             METHOD_GET_PLANNED -> get(result) {
                 ZingSdk.getPlannedWorkouts().map { it.toMap() }
@@ -45,9 +45,8 @@ class WorkoutActivityHandler(
                 call.argument<Int>(ARG_ID)?.let { subscriptions.remove(it)?.cancel() }
                 result.success(null)
             }
-            else -> return false
+            else -> result.notImplemented()
         }
-        return true
     }
 
     private fun get(result: MethodChannel.Result, block: suspend () -> Any) {
@@ -67,12 +66,15 @@ class WorkoutActivityHandler(
         subscriptions.remove(id)?.cancel()
         val job = scope.launch(start = CoroutineStart.LAZY) {
             try {
-                workouts.collect { send(EVENT_DATA, mapOf(ARG_ID to id, ARG_DATA to it)) }
-                send(EVENT_DONE, mapOf(ARG_ID to id))
+                workouts.collect { channel.invokeMethod(EVENT_DATA, mapOf(ARG_ID to id, ARG_DATA to it)) }
+                channel.invokeMethod(EVENT_DONE, mapOf(ARG_ID to id))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
-                send(EVENT_ERROR, mapOf(ARG_ID to id, ARG_CODE to e.flutterCode(), ARG_MESSAGE to e.message))
+                channel.invokeMethod(
+                    EVENT_ERROR,
+                    mapOf(ARG_ID to id, ARG_CODE to e.flutterCode(), ARG_MESSAGE to e.message),
+                )
             } finally {
                 if (subscriptions[id] === coroutineContext.job) subscriptions.remove(id)
             }
@@ -80,10 +82,6 @@ class WorkoutActivityHandler(
         subscriptions[id] = job
         result.success(null)
         job.start()
-    }
-
-    private fun send(event: String, arguments: Map<String, Any?>) {
-        eventChannel.invokeMethod(event, arguments)
     }
 
     private fun MethodCall.dateTime(key: String): LocalDateTime {

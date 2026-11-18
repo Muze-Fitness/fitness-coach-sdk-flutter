@@ -1,14 +1,7 @@
 /// Kind of a planned or completed workout.
 enum SdkWorkoutType {
   regular,
-  recovery;
-
-  static SdkWorkoutType fromName(String name) {
-    return values.firstWhere(
-      (type) => type.name == name,
-      orElse: () => throw ArgumentError('Unknown workout type: $name'),
-    );
-  }
+  recovery,
 }
 
 /// [PlatformException] codes thrown by the workout activity API.
@@ -33,7 +26,7 @@ class PlannedWorkout {
 
   factory PlannedWorkout.fromMap(Map<Object?, Object?> map) {
     return PlannedWorkout(
-      workoutType: SdkWorkoutType.fromName(map['workoutType'] as String),
+      workoutType: SdkWorkoutType.values.byName(map['workoutType'] as String),
       date: DateTime.fromMillisecondsSinceEpoch(map['date'] as int),
       estimatedDuration: Duration(
         milliseconds: map['estimatedDuration'] as int,
@@ -73,7 +66,7 @@ class CompletedWorkout {
 
   factory CompletedWorkout.fromMap(Map<Object?, Object?> map) {
     return CompletedWorkout(
-      workoutType: SdkWorkoutType.fromName(map['workoutType'] as String),
+      workoutType: SdkWorkoutType.values.byName(map['workoutType'] as String),
       date: DateTime.fromMillisecondsSinceEpoch(map['date'] as int),
       actualDuration: Duration(milliseconds: map['actualDuration'] as int),
     );

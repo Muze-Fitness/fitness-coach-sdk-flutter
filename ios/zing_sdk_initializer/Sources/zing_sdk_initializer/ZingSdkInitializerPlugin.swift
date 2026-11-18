@@ -71,7 +71,11 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
             channel: FlutterMethodChannel(
                 name: Channel.workoutActivity,
                 binaryMessenger: registrar.messenger()
-            )
+            ),
+            sdk: { [weak instance] in
+                guard let sdk = instance?.sdk else { throw PluginError.notInitialized }
+                return sdk
+            }
         )
 
         registrar.register(
@@ -107,9 +111,7 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         case Method.setTheme:
             handleSetTheme(method: call, result)
         default:
-            if workoutActivityHandler?.handle(call, sdk: sdk, result: result) != true {
-                result(FlutterMethodNotImplemented)
-            }
+            result(FlutterMethodNotImplemented)
         }
     }
 
