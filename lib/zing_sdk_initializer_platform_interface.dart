@@ -7,6 +7,7 @@ import 'sdk_configuration.dart';
 import 'sdk_critical_error.dart';
 import 'sdk_theme.dart';
 import 'starting_route.dart';
+import 'workout_activity.dart';
 import 'zing_sdk_initializer_method_channel.dart';
 
 abstract class ZingSdkInitializerPlatform extends PlatformInterface {
@@ -74,5 +75,29 @@ abstract class ZingSdkInitializerPlatform extends PlatformInterface {
   void setCriticalErrorCallback(CriticalErrorCallback? callback) {
     throw UnimplementedError(
         'setCriticalErrorCallback() has not been implemented.');
+  }
+
+  Future<List<PlannedWorkout>> getPlannedWorkouts() {
+    throw UnimplementedError('getPlannedWorkouts() has not been implemented.');
+  }
+
+  Stream<List<PlannedWorkout>> observePlannedWorkouts() {
+    throw UnimplementedError(
+        'observePlannedWorkouts() has not been implemented.');
+  }
+
+  Future<List<CompletedWorkout>> getCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) {
+    throw UnimplementedError('getCompletedWorkouts() has not been implemented.');
+  }
+
+  Stream<List<CompletedWorkout>> observeCompletedWorkouts(
+    DateTime start,
+    DateTime end,
+  ) {
+    throw UnimplementedError(
+        'observeCompletedWorkouts() has not been implemented.');
   }
 }

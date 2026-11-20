@@ -46,6 +46,21 @@ extension ZingSDK.ScreenPresentationError: FlutterCodableError {
     }
 }
 
+extension ZingSDK.WorkoutActivityError: FlutterCodableError {
+    var flutterCode: String {
+        switch self {
+        case .notLoggedIn: "not_logged_in"
+        case .onboardingNotCompleted: "onboarding_not_completed"
+        }
+    }
+}
+
+extension WorkoutActivityArgumentError: FlutterCodableError {
+    var flutterCode: String {
+        "workout_activity_failed"
+    }
+}
+
 extension ZingSDK.ProfileUpdateError: FlutterCodableError {
     var flutterCode: String {
         "set_profile_params_failed"

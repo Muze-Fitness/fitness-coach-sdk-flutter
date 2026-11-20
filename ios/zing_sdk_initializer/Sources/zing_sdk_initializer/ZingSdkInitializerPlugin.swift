@@ -7,11 +7,13 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
     private var sdk: ZingSDK?
     private var authStateChannel: FlutterEventChannel?
     private var criticalErrorChannel: FlutterMethodChannel?
+    private var workoutActivityHandler: WorkoutActivityHandler?
 
     private enum Channel {
         static let initializer = "zing_sdk_initializer"
         static let authState = "zing_sdk_initializer/auth_state"
         static let criticalErrorHandler = "zing_sdk_initializer/critical_error_handler"
+        static let workoutActivity = "zing_sdk_initializer/workout_activity"
     }
 
     private enum Method {
@@ -64,6 +66,16 @@ public class ZingSdkInitializerPlugin: NSObject, FlutterPlugin {
         instance.criticalErrorChannel = FlutterMethodChannel(
             name: Channel.criticalErrorHandler,
             binaryMessenger: registrar.messenger()
+        )
+        instance.workoutActivityHandler = WorkoutActivityHandler(
+            channel: FlutterMethodChannel(
+                name: Channel.workoutActivity,
+                binaryMessenger: registrar.messenger()
+            ),
+            sdk: { [weak instance] in
+                guard let sdk = instance?.sdk else { throw PluginError.notInitialized }
+                return sdk
+            }
         )
 
         registrar.register(

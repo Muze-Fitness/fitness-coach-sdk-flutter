@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:zing_sdk_initializer/zing_sdk_initializer.dart';
 import 'home_tab.dart';
 import 'settings_tab.dart';
+import 'workouts_tab.dart';
 
 /// Shared with [SettingsTab]'s theme switcher: `ZingSdk.init` resets whatever
 /// it isn't passed (native `ZingSdk.handleConfiguration` nulls out the
@@ -118,6 +119,12 @@ class _RootPageState extends State<RootPage> {
           icon: Icons.home_outlined,
           page: HomeTab(),
           hasAppBar: false,
+        ),
+        (
+          label: 'Workouts',
+          icon: Icons.fitness_center_outlined,
+          page: WorkoutsTab(),
+          hasAppBar: true,
         ),
       ];
 

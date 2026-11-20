@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Muze-Fitness/zing-coach-sdk-ios",
       "state" : {
-        "revision" : "a704bc18bbd4f0a340ac9ef4c301e9ca3731c887",
-        "version" : "2.4.0"
+        "revision" : "29d080e3c9707e5f1303debb16bb62d7a8169425",
+        "version" : "2.5.0"
       }
     }
   ],
